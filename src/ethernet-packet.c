@@ -95,3 +95,41 @@ void print_mac(mac_address_t *mac)
         printf("%02X", mac->bytes[i]);
     }
 }
+
+void print_ethernet(ethernet_frame_t *frame, bool print_data)
+{
+    uint32_t i = 0;
+
+    printf("Ethernet Packet:\n");
+
+    if (frame == NULL)
+    {
+        printf("  NULL\n");
+
+        return;
+    }
+
+    printf("  Destination MAC: ");
+    print_mac(&frame->header->destination);
+    printf("\n");
+
+    printf("  Source MAC: ");
+    print_mac(&frame->header->source);
+    printf("\n");
+
+    printf("  Ethertype: 0x%04X\n", frame->header->ethertype);
+
+    if (print_data)
+    {
+        i = 0;
+        printf("  Ethernet Data: ");
+
+        while (i < frame->data_len)
+        {
+            printf("%02x ", frame->data[i++]);
+        }
+    }
+    printf("\n");
+
+    return;
+}

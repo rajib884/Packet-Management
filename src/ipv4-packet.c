@@ -147,3 +147,50 @@ void print_ip_addr(ip_addr_t *ip)
         printf("%d", ip->byte[i]);
     }
 }
+
+void print_ipv4(ipv4_datagram_t *datagram, bool print_data)
+{
+    uint32_t i = 0;
+
+    printf("IPv4 Datagram:\n");
+
+    if (datagram == NULL)
+    {
+        printf("  NULL\n");
+
+        return;
+    }
+
+    printf("  version: %02x\n", datagram->header->version);
+    printf("  IHL: %02x\n", datagram->header->header_length);
+    printf("  type_of_service: %02x\n", datagram->header->type_of_service);
+    printf("  total_length: %04x\n", datagram->header->total_length);
+    printf("  identification: %04x\n", datagram->header->identification);
+    printf("  flags: %03b\n", datagram->header->fragment_offset_flag.fields.flags);
+    printf("  fragment_offset: %013b\n",
+           datagram->header->fragment_offset_flag.fields.fragment_offset);
+    printf("  time_to_live: %02x\n", datagram->header->time_to_live);
+    printf("  protocol: %02x\n", datagram->header->protocol);
+    printf("  checksum: %04x\n", datagram->header->checksum);
+    printf("  Source IP: ");
+    print_ip_addr(&datagram->header->source_address);
+    printf("\n");
+    printf("  Destination IP: ");
+    print_ip_addr(&datagram->header->destination_address);
+    printf("\n");
+
+    if (print_data)
+    {
+        i = 0;
+        printf(" IPv4 Data: ");
+
+        while (i < datagram->data_len)
+        {
+            printf("%02x ", datagram->data[i++]);
+        }
+    }
+
+    printf("\n");
+
+    return;
+}

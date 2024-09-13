@@ -32,7 +32,8 @@ typedef struct ethernet_frame
 } ethernet_frame_t;
 
 ethernet_frame_t *buffer_to_ethernet_frame(dynamic_buffer_t *buffer);
-void print_mac(mac_address_t *mac);
 void free_ethernet_frame(ethernet_frame_t **frame_p);
+void print_mac(mac_address_t *mac);
+void print_ethernet(ethernet_frame_t *frame, bool print_data);
 
 #endif /* __ETHERNET_PACKET_H__ */

@@ -66,7 +66,8 @@ typedef struct ipv4_datagram
 } ipv4_datagram_t;
 
 ipv4_datagram_t *ethernet_frame_to_ipv4_datagram(ethernet_frame_t *frame);
-void print_ip_addr(ip_addr_t *ip);
 void free_ipv4_datagram(ipv4_datagram_t **datagram_p);
+void print_ip_addr(ip_addr_t *ip);
+void print_ipv4(ipv4_datagram_t *datagram, bool print_data);
 
 #endif /* __IPV4_PACKET_H__ */
