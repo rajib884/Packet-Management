@@ -100,3 +100,36 @@ void free_udp_packet(udp_packet_t **packet_p)
 
     return;
 }
+
+void print_udp(udp_packet_t *packet, bool print_data)
+{
+    uint32_t i = 0;
+
+    printf("UDP Packet:\n");
+
+    if (packet == NULL)
+    {
+        printf("NULL\n");
+
+        return;
+    }
+
+    printf("  Source port: %04x\n", packet->header->source_port);
+    printf("  Destination port: %04x\n", packet->header->dest_port);
+    printf("  Length: %04x\n", packet->header->length);
+    printf("  Checksum: %04x\n", packet->header->checksum);
+
+    if (print_data)
+    {
+        i = 0;
+        printf("  UDP Data: ");
+        while (i < packet->data_len)
+        {
+            printf("%02x ", packet->data[i++]);
+        }
+    }
+
+    printf("\n");
+
+    return;
+}
