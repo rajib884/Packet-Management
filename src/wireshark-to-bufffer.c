@@ -5,14 +5,11 @@
 #include "../include/debug.h"
 #include "wireshark-to-buffer.h"
 
-#define WIRESHARK_DATA_FILE "data/udp.txt"
-
+#define IPV4_MAX_SIZE UINT16_MAX /* IPv4 has maximum length of 65535 (UINT16_MAX)*/
 #define LINE_BUF_LEN 80          /* Buffer size to store 1 line from file */
 #define LINE_MAX_CONTENT 16      /* Each line has maximum 16 byte */
-#define IPV4_MAX_SIZE UINT16_MAX /* IPv4 has maximum length of 65535 (UINT16_MAX)*/
-
-#define LINE_DATA_START 6 /* Garbage value before this */
-#define LINE_DATA_END 54  /* Garbage value after this */
+#define LINE_DATA_START 6        /* Garbage value before this */
+#define LINE_DATA_END 54         /* Garbage value after this */
 
 #define FSEEK_OK 0
 #define BASE_HEX 16
@@ -53,7 +50,7 @@ dynamic_buffer_t *get_next_packet()
 
     if (current_pos >= file_length)
     {
-        goto cleanup;
+        goto cleanup; /* Nothing more to read */
     }
 
     if (fseek(file, current_pos, SEEK_SET) != FSEEK_OK)
@@ -65,7 +62,7 @@ dynamic_buffer_t *get_next_packet()
     buffer = create_dynamic_buffer(DYNAMIC_BUFFER_INIT_SIZE);
     success = true;
 
-    while (current_pos < file_length && success)
+    while ((current_pos < file_length) && success)
     {
         /* Read a line from file */
         if (!fgets(line_buf, LINE_BUF_LEN, file))
@@ -82,7 +79,7 @@ dynamic_buffer_t *get_next_packet()
             break;
         }
 
-        startptr = &line_buf[LINE_DATA_START];
+        startptr = line_buf + LINE_DATA_START;
         line_content_index = 0;
 
         while (*startptr != '\0')
@@ -96,7 +93,7 @@ dynamic_buffer_t *get_next_packet()
 
             line_content[line_content_index++] = (char)temp_value;
 
-            if (line_content_index >= LINE_MAX_CONTENT)
+            if (line_content_index > LINE_MAX_CONTENT)
             {
                 success = success && add_data(buffer, line_content, line_content_index);
                 line_content_index = 0;
