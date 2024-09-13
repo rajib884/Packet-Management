@@ -64,7 +64,7 @@ bool add_data(dynamic_buffer_t *buf, const uint8_t *data, size_t data_size)
     size_t needed_capacity = 0;
     size_t new_capacity = 0;
 
-    if (buf == NULL || data == NULL || data_size == 0)
+    if (buf == NULL || data == NULL)
     {
         return false;
     }

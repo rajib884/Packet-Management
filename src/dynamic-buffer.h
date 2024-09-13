@@ -7,9 +7,9 @@
 
 typedef struct dynamic_buffer
 {
-    uint8_t *data;   // Pointer to the buffer data
-    size_t size;     // Current size of the buffer (number of bytes)
-    size_t capacity; // Current capacity of the buffer (number of bytes)
+    uint8_t *data;   /* buffer data */
+    size_t size;     /* size of the data */
+    size_t capacity; /* capacity of the buffer */
 } dynamic_buffer_t;
 
 dynamic_buffer_t *create_dynamic_buffer(size_t initial_capacity);
