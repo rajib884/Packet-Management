@@ -1,27 +1,71 @@
+// OK AFAIK
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#include "../include/debug.h"
+#include "debug.h"
 #include "wireshark-to-buffer.h"
 
-#define IPV4_MAX_SIZE UINT16_MAX /* IPv4 has maximum length of 65535 (UINT16_MAX)*/
-#define LINE_BUF_LEN 80          /* Buffer size to store 1 line from file */
-#define LINE_MAX_CONTENT 16      /* Each line has maximum 16 byte */
-#define LINE_DATA_START 6        /* Garbage value before this */
-#define LINE_DATA_END 54         /* Garbage value after this */
+#define LINE_BUF_LEN 80     /* Buffer size to store 1 line from file */
+#define LINE_MAX_CONTENT 16 /* Each line has maximum 16 byte */
+#define LINE_DATA_START 6   /* Garbage value before this */
+#define LINE_DATA_END 54    /* Garbage value after this */
 
 #define FSEEK_OK 0
 #define BASE_HEX 16
 
 #define DYNAMIC_BUFFER_INIT_SIZE 128 /* Buffer is initialized with this capacity */
 
-dynamic_buffer_t *get_next_packet()
+wireshark_file_t *init_wireshark_file(const char *file_path)
+{
+    wireshark_file_t *ws_file = NULL;
+
+    if (file_path == NULL)
+    {
+        return NULL;
+    }
+
+    ws_file = (wireshark_file_t *)calloc(1, sizeof(wireshark_file_t));
+
+    if (ws_file == NULL)
+    {
+        fprintf(stderr, "Could not allocate memory for wireshark_file_t\n");
+        return NULL;
+    }
+
+    ws_file->file_path = (const char *)strdup(file_path);
+
+    if (ws_file->file_path == NULL)
+    {
+        fprintf(stderr, "Could not allocate memory for file_path\n");
+        return NULL;
+    }
+
+    return ws_file;
+}
+
+void free_wireshark_file(wireshark_file_t **ws_file_p)
+{
+    if (ws_file_p == NULL || (*ws_file_p) == NULL)
+    {
+        return;
+    }
+
+    free((*ws_file_p)->file_path);
+    (*ws_file_p)->file_path = NULL;
+
+    free((*ws_file_p));
+    (*ws_file_p) = NULL;
+
+    return;
+}
+
+dynamic_buffer_t *get_next_packet(wireshark_file_t *ws_file)
 {
     dynamic_buffer_t *buffer = NULL;
     FILE *file = NULL;
     long file_length = 0;
-    static long current_pos = 0;
     char line_buf[LINE_BUF_LEN] = {0};
     uint8_t line_content[LINE_MAX_CONTENT] = {0};
     size_t line_content_index = 0;
@@ -30,48 +74,61 @@ dynamic_buffer_t *get_next_packet()
     long temp_value = 0;
     bool success = false;
 
+    if (ws_file == NULL)
+    {
+        return NULL;
+    }
+
     debug("Getting next packet\n");
 
-    file = fopen(WIRESHARK_DATA_FILE, "r");
+    file = fopen(ws_file->file_path, "r");
 
     if (file == NULL)
     {
-        fprintf(stderr, "Error opening file for reading: %s\n", WIRESHARK_DATA_FILE);
+        fprintf(stderr, "Error opening file for reading: %s\n", ws_file->file_path);
         goto cleanup;
     }
 
     if (fseek(file, 0, SEEK_END) != FSEEK_OK)
     {
-        fprintf(stderr, "Error on fseek to start on file: %s\n", WIRESHARK_DATA_FILE);
+        fprintf(stderr, "Error on fseek to start on file: %s\n", ws_file->file_path);
         goto cleanup;
     }
 
     file_length = ftell(file);
 
-    if (current_pos >= file_length)
+    if (ws_file->current_pos >= file_length)
     {
         goto cleanup; /* Nothing more to read */
     }
 
-    if (fseek(file, current_pos, SEEK_SET) != FSEEK_OK)
+    if (fseek(file, ws_file->current_pos, SEEK_SET) != FSEEK_OK)
     {
-        fprintf(stderr, "Error on fseek to %ld on file: %s\n", current_pos, WIRESHARK_DATA_FILE);
+        fprintf(stderr, "Error on fseek to %ld on file: %s\n", ws_file->current_pos,
+                ws_file->file_path);
         goto cleanup;
     }
 
     buffer = create_dynamic_buffer(DYNAMIC_BUFFER_INIT_SIZE);
+
+    if (buffer == NULL)
+    {
+        fprintf(stderr, "Error creating dynamic buffer.\n");
+        goto cleanup;
+    }
+
     success = true;
 
-    while ((current_pos < file_length) && success)
+    while ((ws_file->current_pos < file_length) && success)
     {
-        /* Read a line from file */
+        /* Read a line from file and store it in line_buf */
         if (!fgets(line_buf, LINE_BUF_LEN, file))
         {
-            current_pos = ftell(file);
+            ws_file->current_pos = ftell(file);
             break;
         }
 
-        current_pos = ftell(file);
+        ws_file->current_pos = ftell(file);
         line_buf[LINE_DATA_END] = '\0';
 
         if (strnlen(line_buf, LINE_DATA_END) < LINE_DATA_START)
