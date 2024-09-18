@@ -4,7 +4,7 @@
 #include "singly-linked-list.h"
 
 /* Function to delete a node from the linked list */
-void delete_node(ListNode_t **head, ListNode_t *node, void (*free_data)(ListNode_t *)) // OK
+void linked_list_delete_node(ListNode_t **head, ListNode_t *node, free_data_t free_data) // OK
 {
     ListNode_t *prev = NULL;
 
@@ -42,8 +42,29 @@ void delete_node(ListNode_t **head, ListNode_t *node, void (*free_data)(ListNode
     return;
 }
 
+bool linked_list_delete_list(ListNode_t **head, free_data_t free_data)
+{
+    ListNode_t *node = NULL;
+
+    if (head == NULL || *head == NULL || free_data == NULL)
+    {
+        return false;
+    }
+
+    while (*head != NULL)
+    {
+        node = (*head)->next;
+        (*head)->next = NULL;
+
+        free_data(*head);
+        *head = node;
+    }
+
+    return true;
+}
+
 /* Function to insert a node at the head of the list */
-void insert_at_head(ListNode_t **head, ListNode_t *new_node) // OK
+void linked_list_insert_at_head(ListNode_t **head, ListNode_t *new_node) // OK
 {
     if (head == NULL || new_node == NULL)
     {
@@ -57,19 +78,20 @@ void insert_at_head(ListNode_t **head, ListNode_t *new_node) // OK
 }
 
 /* Function to search for a node in the list */
-ListNode_t *search(ListNode_t **head, uint32_t search_item,
-                   int32_t (*match_func)(ListNode_t *, uint32_t))
+ListNode_t *linked_list_search(ListNode_t **head, const void *search_item, match_func_t match_func)
 {
-    ListNode_t *current = *head;
+    ListNode_t *current = NULL;
 
-    if (match_func == NULL)
+    if (head == NULL || *head == NULL || search_item == NULL || match_func == NULL)
     {
         return NULL;
     }
 
+    current = *head;
+
     while (current != NULL)
     {
-        if (match_func(current, search_item) == 0)
+        if (match_func(current, search_item))
         {
             return current;
         }
