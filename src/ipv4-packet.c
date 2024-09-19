@@ -129,26 +129,27 @@ void ipv4_datagram_free(ipv4_datagram_t **datagram_p)
     return;
 }
 
-void print_ip_addr(ip_addr_t *ip)
+int print_ip_addr(ip_addr_t *ip)
 {
     uint32_t i = 0;
+    int count = 0;
 
     if (ip == NULL)
     {
-        printf("No value.");
-
-        return;
+        return printf("No value.");
     }
 
     for (i = 0; i < IP_ADDRESS_LENGTH; i++)
     {
         if (i != 0)
         {
-            printf(".");
+            count += printf(".");
         }
 
-        printf("%d", ip->byte[i]);
+        count += printf("%d", ip->byte[i]);
     }
+
+    return count;
 }
 
 void print_ipv4(ipv4_datagram_t *datagram, bool print_data)

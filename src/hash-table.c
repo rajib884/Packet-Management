@@ -14,6 +14,8 @@ HashTable_t *hash_table_create(uint64_t capacity, hash_func_t hash_func, match_f
 
     if (capacity == 0 || hash_func == NULL || match_func == NULL)
     {
+        fprintf(stderr, "Invalid parameter for creating hash table\n");
+
         return NULL;
     }
 
@@ -22,6 +24,7 @@ HashTable_t *hash_table_create(uint64_t capacity, hash_func_t hash_func, match_f
     if (hash_table == NULL)
     {
         fprintf(stderr, "Unable to allocate memory for Hash Table.\n");
+
         return NULL;
     }
 
@@ -31,8 +34,8 @@ HashTable_t *hash_table_create(uint64_t capacity, hash_func_t hash_func, match_f
     {
         free(hash_table);
         hash_table = NULL;
-
         fprintf(stderr, "Unable to allocate memory for Hash Table table.\n");
+
         return NULL;
     }
 

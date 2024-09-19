@@ -2,7 +2,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "debug.h"
 #include "wireshark-to-buffer.h"
 
 #define LINE_BUF_LEN 80     /* Buffer size to store 1 line from file */
@@ -125,8 +124,6 @@ dynamic_buffer_t *wireshark_file_get_next_packet(wireshark_file_t *ws_file)
         return NULL;
     }
 
-    debug("Getting next packet\n");
-
     file = fopen(ws_file->file_path, "r");
 
     if (file == NULL)
@@ -145,7 +142,7 @@ dynamic_buffer_t *wireshark_file_get_next_packet(wireshark_file_t *ws_file)
 
     if (ws_file->current_pos >= ws_file->file_length)
     {
-        goto cleanup; /* Nothing more to read */
+        goto cleanup;
     }
 
     if (fseek(file, ws_file->current_pos, SEEK_SET) != FSEEK_OK)

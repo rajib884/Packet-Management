@@ -24,6 +24,7 @@ typedef struct packet_counter
 packet_counter_t *packet_counter_create();
 void packet_counter_increase(packet_counter_t *counter, ipv4_datagram_t *datagram);
 void packet_counter_free(packet_counter_t **counter_p);
-void print_packet_linked_list_packets(packet_node_t *head);
+void print_packet_counter_hash_table(packet_counter_t *counter);
+void print_packet_counter_linked_list(packet_counter_t *counter);
 
 #endif /* __PACKET_COUNTER_H__ */
