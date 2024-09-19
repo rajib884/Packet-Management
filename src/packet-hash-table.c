@@ -9,8 +9,6 @@
 #define FNV1A_INIT 0xcbf29ce484222325ULL
 #define FNV1A_PRIME 0x100000001b3ULL
 
-HashTable_t *packet_hash_table = NULL;
-
 static uint64_t hash_func(const void *key, uint64_t true_hash_size)
 {
     uint64_t hash = 0;
@@ -23,6 +21,8 @@ static uint64_t hash_func(const void *key, uint64_t true_hash_size)
     while (i < KEY_LENGTH)
     {
         hash = (hash ^ str[i]) * FNV1A_PRIME;
+        // hash = ((hash << 5) + hash) + str[i]; /* hash * 33 + c */
+        // hash = str[i] + (hash << 6) + (hash << 16) - hash;
         i++;
     }
 
@@ -32,6 +32,7 @@ static uint64_t hash_func(const void *key, uint64_t true_hash_size)
     }
     hash %= true_hash_size;
 
+    // hash ^= (hash >> 33);
     return hash;
 }
 
@@ -63,34 +64,29 @@ static void free_hash_node(ListNode_t *node)
     return;
 }
 
-void init_packet_hash_table()
+HashTable_t *packet_hash_table_create(uint64_t capacity)
 {
-    if (packet_hash_table == NULL)
-    {
-        packet_hash_table = hash_table_create(100, hash_func, match_func, free_hash_node);
-    }
-
-    return;
+    return hash_table_create(capacity, hash_func, match_func, free_hash_node);
 }
 
-void *key_from_ip(ip_addr_t *src, ip_addr_t *dest)
+void *key_from_ip(ipv4_datagram_t *datagram)
 {
-    uint8_t *t = NULL;
+    uint8_t *key = NULL;
 
-    if (src == NULL || dest == NULL)
+    if (datagram == NULL || datagram->header == NULL)
     {
         return NULL;
     }
 
-    t = (uint8_t *)calloc(2, sizeof(ip_addr_t));
+    key = (uint8_t *)calloc(2, sizeof(ip_addr_t));
 
-    if (t == NULL)
+    if (key == NULL)
     {
         return NULL;
     }
 
-    memcpy(t, src, sizeof(ip_addr_t));
-    memcpy(t + sizeof(ip_addr_t), dest, sizeof(ip_addr_t));
+    memcpy(key, &datagram->header->source_address, sizeof(ip_addr_t));
+    memcpy(key + sizeof(ip_addr_t), &datagram->header->destination_address, sizeof(ip_addr_t));
 
-    return (void *)t;
+    return (void *)key;
 }

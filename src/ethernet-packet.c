@@ -1,11 +1,13 @@
-#include <arpa/inet.h> // For ntohs and ntohl
+// OK AFAIK RENAME
+
+#include <arpa/inet.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
 
 #include "ethernet-packet.h"
 
-ethernet_frame_t *buffer_to_ethernet_frame(dynamic_buffer_t *buffer)
+ethernet_frame_t *ethernet_frame_from_dynamic_buffer(dynamic_buffer_t *buffer)
 {
     ethernet_header_t *header = NULL;
     ethernet_frame_t *frame = NULL;
@@ -34,7 +36,6 @@ ethernet_frame_t *buffer_to_ethernet_frame(dynamic_buffer_t *buffer)
     header->ethertype = ntohs(header->ethertype);
 
     data_len = buffer->size - sizeof(ethernet_header_t);
-
     frame = (ethernet_frame_t *)calloc(1, sizeof(ethernet_frame_t) + data_len);
 
     if (frame == NULL)
@@ -59,7 +60,7 @@ cleanup:
     return NULL;
 }
 
-void free_ethernet_frame(ethernet_frame_t **frame_p)
+void ethernet_frame_free(ethernet_frame_t **frame_p)
 {
     if (frame_p == NULL || *frame_p == NULL)
     {
@@ -92,6 +93,7 @@ void print_mac(mac_address_t *mac)
         {
             printf(":");
         }
+
         printf("%02X", mac->bytes[i]);
     }
 }

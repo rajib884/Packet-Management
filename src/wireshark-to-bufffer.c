@@ -17,9 +17,10 @@
 
 #define DYNAMIC_BUFFER_INIT_SIZE 128 /* Buffer is initialized with this capacity */
 
-wireshark_file_t *init_wireshark_file(const char *file_path)
+wireshark_file_t *wireshark_file_create(const char *file_path)
 {
     wireshark_file_t *ws_file = NULL;
+    FILE *file = NULL;
 
     if (file_path == NULL)
     {
@@ -31,7 +32,7 @@ wireshark_file_t *init_wireshark_file(const char *file_path)
     if (ws_file == NULL)
     {
         fprintf(stderr, "Could not allocate memory for wireshark_file_t\n");
-        return NULL;
+        goto cleanup;
     }
 
     ws_file->file_path = (const char *)strdup(file_path);
@@ -39,20 +40,68 @@ wireshark_file_t *init_wireshark_file(const char *file_path)
     if (ws_file->file_path == NULL)
     {
         fprintf(stderr, "Could not allocate memory for file_path\n");
-        return NULL;
+        goto cleanup;
     }
 
+    file = fopen(ws_file->file_path, "r");
+
+    if (file == NULL)
+    {
+        fprintf(stderr, "Error opening file for reading: %s\n", ws_file->file_path);
+        goto cleanup;
+    }
+
+    if (fseek(file, 0, SEEK_END) != FSEEK_OK)
+    {
+        fprintf(stderr, "Error on fseek to end on file: %s\n", ws_file->file_path);
+        goto cleanup;
+    }
+
+    ws_file->file_length = ftell(file);
+
+    fclose(file);
+    file = NULL;
+
     return ws_file;
+
+cleanup:
+
+    if (file != NULL)
+    {
+        fclose(file);
+        file = NULL;
+    }
+
+    if (ws_file != NULL)
+    {
+        free((void *)ws_file->file_path);
+        ws_file->file_path = NULL;
+    }
+
+    free(ws_file);
+    ws_file = NULL;
+
+    return NULL;
 }
 
-void free_wireshark_file(wireshark_file_t **ws_file_p)
+bool wireshark_file_readable(wireshark_file_t *ws_file)
+{
+    if (ws_file == NULL)
+    {
+        return false;
+    }
+
+    return ws_file->file_length > ws_file->current_pos;
+}
+
+void wireshark_file_free(wireshark_file_t **ws_file_p)
 {
     if (ws_file_p == NULL || (*ws_file_p) == NULL)
     {
         return;
     }
 
-    free((*ws_file_p)->file_path);
+    free((void *)(*ws_file_p)->file_path);
     (*ws_file_p)->file_path = NULL;
 
     free((*ws_file_p));
@@ -61,14 +110,13 @@ void free_wireshark_file(wireshark_file_t **ws_file_p)
     return;
 }
 
-dynamic_buffer_t *get_next_packet(wireshark_file_t *ws_file)
+dynamic_buffer_t *wireshark_file_get_next_packet(wireshark_file_t *ws_file)
 {
     dynamic_buffer_t *buffer = NULL;
     FILE *file = NULL;
-    long file_length = 0;
     char line_buf[LINE_BUF_LEN] = {0};
-    uint8_t line_content[LINE_MAX_CONTENT] = {0};
-    size_t line_content_index = 0;
+    uint8_t content[LINE_MAX_CONTENT] = {0};
+    size_t content_pos = 0;
     char *endptr = NULL;
     char *startptr = NULL;
     long temp_value = 0;
@@ -91,13 +139,13 @@ dynamic_buffer_t *get_next_packet(wireshark_file_t *ws_file)
 
     if (fseek(file, 0, SEEK_END) != FSEEK_OK)
     {
-        fprintf(stderr, "Error on fseek to start on file: %s\n", ws_file->file_path);
+        fprintf(stderr, "Error on fseek to end on file: %s\n", ws_file->file_path);
         goto cleanup;
     }
 
-    file_length = ftell(file);
+    ws_file->file_length = ftell(file);
 
-    if (ws_file->current_pos >= file_length)
+    if (ws_file->current_pos >= ws_file->file_length)
     {
         goto cleanup; /* Nothing more to read */
     }
@@ -109,7 +157,7 @@ dynamic_buffer_t *get_next_packet(wireshark_file_t *ws_file)
         goto cleanup;
     }
 
-    buffer = create_dynamic_buffer(DYNAMIC_BUFFER_INIT_SIZE);
+    buffer = dynamic_buffer_create(DYNAMIC_BUFFER_INIT_SIZE);
 
     if (buffer == NULL)
     {
@@ -119,7 +167,7 @@ dynamic_buffer_t *get_next_packet(wireshark_file_t *ws_file)
 
     success = true;
 
-    while ((ws_file->current_pos < file_length) && success)
+    while ((ws_file->current_pos < ws_file->file_length) && success)
     {
         /* Read a line from file and store it in line_buf */
         if (!fgets(line_buf, LINE_BUF_LEN, file))
@@ -137,7 +185,7 @@ dynamic_buffer_t *get_next_packet(wireshark_file_t *ws_file)
         }
 
         startptr = line_buf + LINE_DATA_START;
-        line_content_index = 0;
+        content_pos = 0;
 
         while (*startptr != '\0')
         {
@@ -148,24 +196,25 @@ dynamic_buffer_t *get_next_packet(wireshark_file_t *ws_file)
                 break;
             }
 
-            line_content[line_content_index++] = (char)temp_value;
+            content[content_pos++] = (char)temp_value;
 
-            if (line_content_index > LINE_MAX_CONTENT)
+            if (content_pos > LINE_MAX_CONTENT)
             {
-                success = success && add_data(buffer, line_content, line_content_index);
-                line_content_index = 0;
+                /* Avoid array overflow */
+                success = success && dynamic_buffer_add_data(buffer, content, content_pos);
+                content_pos = 0;
             }
 
             startptr = endptr;
         }
 
-        success = success && add_data(buffer, line_content, line_content_index);
+        success = success && dynamic_buffer_add_data(buffer, content, content_pos);
     }
 
     if (success == false)
     {
         fprintf(stderr, "Failed to add data to buffer\n");
-        free_buffer(&buffer);
+        dynamic_buffer_free(&buffer);
     }
 
 cleanup:

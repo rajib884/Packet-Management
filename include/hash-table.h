@@ -23,9 +23,9 @@ typedef struct HashTable
 } HashTable_t;
 
 HashTable_t *hash_table_create(uint64_t, hash_func_t, match_func_t, free_data_t);
-const void *hash_table_search(HashTable_t *hash_table, const void *key);
-bool hash_table_insert_node(HashTable_t *hash_table, const void *key, const void *data);
-bool hash_table_delete_node(HashTable_t *hash_table, const void *key);
-void hash_table_delete_table(HashTable_t **hash_table_p);
+const void *hash_table_get_item(HashTable_t *hash_table, const void *key);
+bool hash_table_add_item(HashTable_t *hash_table, const void *key, const void *data);
+bool hash_table_remove_item(HashTable_t *hash_table, const void *key);
+void hash_table_free(HashTable_t **hash_table_p);
 
 #endif /* __HASH_TABLE_H__*/

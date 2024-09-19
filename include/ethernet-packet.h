@@ -31,8 +31,8 @@ typedef struct ethernet_frame
     uint8_t data[];
 } ethernet_frame_t;
 
-ethernet_frame_t *buffer_to_ethernet_frame(dynamic_buffer_t *buffer);
-void free_ethernet_frame(ethernet_frame_t **frame_p);
+ethernet_frame_t *ethernet_frame_from_dynamic_buffer(dynamic_buffer_t *buffer);
+void ethernet_frame_free(ethernet_frame_t **frame_p);
 void print_mac(mac_address_t *mac);
 void print_ethernet(ethernet_frame_t *frame, bool print_data);
 

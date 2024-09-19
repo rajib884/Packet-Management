@@ -9,11 +9,13 @@
 typedef struct wireshark_file
 {
     long current_pos;
+    long file_length;
     const char *file_path;
 } wireshark_file_t;
 
-wireshark_file_t *init_wireshark_file(const char *file_path);
-void free_wireshark_file(wireshark_file_t **ws_file_p);
-dynamic_buffer_t *get_next_packet(wireshark_file_t *ws_file);
+wireshark_file_t *wireshark_file_create(const char *file_path);
+bool wireshark_file_readable(wireshark_file_t *ws_file);
+void wireshark_file_free(wireshark_file_t **ws_file_p);
+dynamic_buffer_t *wireshark_file_get_next_packet(wireshark_file_t *ws_file);
 
 #endif /* __WIRESHARK_TO_BUFFER_H__*/

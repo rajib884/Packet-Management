@@ -1,3 +1,5 @@
+// OK AFAIK
+
 #include <arpa/inet.h>
 #include <stdbool.h>
 #include <stdlib.h>
@@ -5,7 +7,7 @@
 
 #include "udp-packet.h"
 
-udp_packet_t *ipv4_datagram_to_udp_packet(ipv4_datagram_t *datagram)
+udp_packet_t *udp_packet_from_ipv4_datagram(ipv4_datagram_t *datagram)
 {
     udp_packet_t *packet = NULL;
     udp_header_t *header = NULL;
@@ -85,7 +87,7 @@ cleanup:
     return NULL;
 }
 
-void free_udp_packet(udp_packet_t **packet_p)
+void udp_packet_free(udp_packet_t **packet_p)
 {
     if (packet_p == NULL || *packet_p == NULL)
     {
@@ -123,6 +125,7 @@ void print_udp(udp_packet_t *packet, bool print_data)
     {
         i = 0;
         printf("  UDP Data: ");
+
         while (i < packet->data_len)
         {
             printf("%02x ", packet->data[i++]);

@@ -2,10 +2,11 @@
 #define __PACKET_HASH_TABLE_H__
 
 #include "hash-table.h"
+#include "ipv4-packet.h"
 
 extern HashTable_t *packet_hash_table;
 
-void init_packet_hash_table();
-void *key_from_ip(ip_addr_t *src, ip_addr_t *dest);
+HashTable_t *packet_hash_table_create(uint64_t capacity);
+void *key_from_ip(ipv4_datagram_t *datagram);
 
 #endif /* __PACKET_HASH_TABLE_H__ */

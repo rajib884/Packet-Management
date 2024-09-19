@@ -65,8 +65,8 @@ typedef struct ipv4_datagram
     uint8_t data[];
 } ipv4_datagram_t;
 
-ipv4_datagram_t *ethernet_frame_to_ipv4_datagram(ethernet_frame_t *frame);
-void free_ipv4_datagram(ipv4_datagram_t **datagram_p);
+ipv4_datagram_t *ipv4_datagram_from_ethernet_frame(ethernet_frame_t *frame);
+void ipv4_datagram_free(ipv4_datagram_t **datagram_p);
 void print_ip_addr(ip_addr_t *ip);
 void print_ipv4(ipv4_datagram_t *datagram, bool print_data);
 

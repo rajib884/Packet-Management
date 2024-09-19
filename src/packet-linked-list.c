@@ -1,11 +1,10 @@
 #include <inttypes.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "packet-linked-list.h"
 
-static packet_node_t *packet_node_head = NULL;
-
-static void free_packet_node(ListNode_t *list_node)
+void packet_free_list_node(ListNode_t *list_node)
 {
     free(list_node);
     list_node = NULL;
@@ -13,29 +12,22 @@ static void free_packet_node(ListNode_t *list_node)
     return;
 }
 
-void packet_linked_list_add_packet(packet_node_t *packet_node)
+packet_node_t *packet_create_list_node(ipv4_datagram_t *datagram)
 {
-    if (packet_node == NULL)
-    {
-        return;
-    }
+    packet_node_t *node = (packet_node_t *)calloc(1, sizeof(packet_node_t));
+    memcpy(&node->dest, &datagram->header->destination_address, sizeof(ip_addr_t));
+    memcpy(&node->src, &datagram->header->source_address, sizeof(ip_addr_t));
+    node->ref_counter = 1;
 
-    linked_list_insert_at_head((ListNode_t **)&packet_node_head, (ListNode_t *)packet_node);
-
-    return;
+    return node;
 }
 
-void packet_linked_list_delete_list()
-{
-    linked_list_delete_list((ListNode_t **)&packet_node_head, free_packet_node);
-}
-
-void print_packet_linked_list_packets()
+void print_packet_linked_list_packets(packet_node_t *head)
 {
     packet_node_t *current = NULL;
     uint64_t i = 1;
 
-    current = packet_node_head;
+    current = head;
 
     while (current != NULL)
     {

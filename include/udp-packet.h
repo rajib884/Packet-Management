@@ -22,8 +22,8 @@ typedef struct udp_packet
     uint8_t data[];
 } udp_packet_t;
 
-udp_packet_t *ipv4_datagram_to_udp_packet(ipv4_datagram_t *datagram);
-void free_udp_packet(udp_packet_t **packet_p);
+udp_packet_t *udp_packet_from_ipv4_datagram(ipv4_datagram_t *datagram);
+void udp_packet_free(udp_packet_t **packet_p);
 void print_udp(udp_packet_t *packet, bool print_data);
 
 #endif /* __UDP_PACKET_H__ */

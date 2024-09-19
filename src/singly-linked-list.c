@@ -1,3 +1,5 @@
+// OK AFAIK
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -42,13 +44,14 @@ void linked_list_delete_node(ListNode_t **head, ListNode_t *node, free_data_t fr
     return;
 }
 
-bool linked_list_delete_list(ListNode_t **head, free_data_t free_data)
+uint64_t linked_list_delete_list(ListNode_t **head, free_data_t free_data)
 {
     ListNode_t *node = NULL;
+    uint64_t count = 0;
 
     if (head == NULL || *head == NULL || free_data == NULL)
     {
-        return false;
+        return 0;
     }
 
     while (*head != NULL)
@@ -58,9 +61,10 @@ bool linked_list_delete_list(ListNode_t **head, free_data_t free_data)
 
         free_data(*head);
         *head = node;
+        count++;
     }
 
-    return true;
+    return count;
 }
 
 /* Function to insert a node at the head of the list */

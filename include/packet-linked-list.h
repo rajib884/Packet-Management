@@ -14,8 +14,8 @@ typedef struct packet_node
     uint64_t ref_counter;
 } packet_node_t;
 
-void packet_linked_list_add_packet(packet_node_t *packet);
-void print_packet_linked_list_packets();
-void packet_linked_list_delete_list();
+void packet_free_list_node(ListNode_t *list_node);
+void print_packet_linked_list_packets(packet_node_t *head);
+packet_node_t *packet_create_list_node(ipv4_datagram_t *datagram);
 
 #endif /* __PACKET_LINKED_LIST_H__ */

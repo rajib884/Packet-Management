@@ -12,9 +12,9 @@ typedef struct dynamic_buffer
     size_t capacity; /* capacity of the buffer */
 } dynamic_buffer_t;
 
-dynamic_buffer_t *create_dynamic_buffer(size_t initial_capacity);
-bool resize_buffer(dynamic_buffer_t *buf, size_t new_capacity);
-bool add_data(dynamic_buffer_t *buf, const uint8_t *data, size_t data_size);
-void free_buffer(dynamic_buffer_t **buf_p);
+dynamic_buffer_t *dynamic_buffer_create(size_t initial_capacity);
+bool dynamic_buffer_resize(dynamic_buffer_t *buf, size_t new_capacity);
+bool dynamic_buffer_add_data(dynamic_buffer_t *buf, const uint8_t *data, size_t data_size);
+void dynamic_buffer_free(dynamic_buffer_t **buf_p);
 
 #endif /* __DYNAMIC_BUFFER_H__ */

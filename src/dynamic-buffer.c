@@ -1,3 +1,4 @@
+// OK AFAIK
 
 #include <stdbool.h>
 #include <stdlib.h>
@@ -5,7 +6,7 @@
 
 #include "dynamic-buffer.h"
 
-dynamic_buffer_t *create_dynamic_buffer(size_t initial_capacity)
+dynamic_buffer_t *dynamic_buffer_create(size_t initial_capacity)
 {
     dynamic_buffer_t *buf = NULL;
 
@@ -14,14 +15,14 @@ dynamic_buffer_t *create_dynamic_buffer(size_t initial_capacity)
         return NULL;
     }
 
-    buf = (dynamic_buffer_t *)malloc(sizeof(dynamic_buffer_t));
+    buf = (dynamic_buffer_t *)calloc(1, sizeof(dynamic_buffer_t));
 
     if (buf == NULL)
     {
         return NULL;
     }
 
-    buf->data = (uint8_t *)malloc(initial_capacity);
+    buf->data = (uint8_t *)calloc(initial_capacity, sizeof(uint8_t));
 
     if (buf->data == NULL)
     {
@@ -37,7 +38,7 @@ dynamic_buffer_t *create_dynamic_buffer(size_t initial_capacity)
     return buf;
 }
 
-bool resize_buffer(dynamic_buffer_t *buf, size_t new_capacity)
+bool dynamic_buffer_resize(dynamic_buffer_t *buf, size_t new_capacity)
 {
     uint8_t *new_data = NULL;
 
@@ -59,36 +60,38 @@ bool resize_buffer(dynamic_buffer_t *buf, size_t new_capacity)
     return true;
 }
 
-bool add_data(dynamic_buffer_t *buf, const uint8_t *data, size_t data_size)
+bool dynamic_buffer_add_data(dynamic_buffer_t *buf, const uint8_t *data, size_t data_size)
 {
     size_t needed_capacity = 0;
-    size_t new_capacity = 0;
+    size_t capacity = 0;
 
     if (buf == NULL || data == NULL)
     {
         return false;
     }
 
+    /* Check available capacity */
     needed_capacity = buf->size + data_size;
-    new_capacity = buf->capacity;
+    capacity = buf->capacity;
 
-    while (new_capacity < needed_capacity)
+    while (capacity < needed_capacity)
     {
-        new_capacity = new_capacity * 2;
+        capacity = capacity * 2;
     }
 
-    if (new_capacity > buf->capacity && !resize_buffer(buf, new_capacity))
+    if (capacity > buf->capacity && !dynamic_buffer_resize(buf, capacity))
     {
         return false;
     }
 
+    /* Copy the data */
     memcpy(buf->data + buf->size, data, data_size);
     buf->size += data_size;
 
     return true;
 }
 
-void free_buffer(dynamic_buffer_t **buf_p)
+void dynamic_buffer_free(dynamic_buffer_t **buf_p)
 {
     if (buf_p == NULL)
     {

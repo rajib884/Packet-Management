@@ -1,3 +1,5 @@
+// OK AFAIK
+
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -5,7 +7,7 @@
 
 #include "ipv4-packet.h"
 
-ipv4_datagram_t *ethernet_frame_to_ipv4_datagram(ethernet_frame_t *frame)
+ipv4_datagram_t *ipv4_datagram_from_ethernet_frame(ethernet_frame_t *frame)
 {
     ipv4_header_t *header = NULL;
     uint8_t *options = NULL;
@@ -21,7 +23,7 @@ ipv4_datagram_t *ethernet_frame_to_ipv4_datagram(ethernet_frame_t *frame)
 
     if (frame->header->ethertype != ETHERTYPE_IPV4)
     {
-        fprintf(stderr, "Ethernet data is not IPv4 type.\n");
+        // fprintf(stderr, "Ethernet data is not IPv4 type.\n");
         goto cleanup;
     }
 
@@ -55,6 +57,7 @@ ipv4_datagram_t *ethernet_frame_to_ipv4_datagram(ethernet_frame_t *frame)
     }
 
     options_len = header_len - sizeof(ipv4_header_t);
+
     if (options_len != 0)
     {
         options = (uint8_t *)calloc(options_len, sizeof(uint8_t));
@@ -109,7 +112,7 @@ cleanup:
     return NULL;
 }
 
-void free_ipv4_datagram(ipv4_datagram_t **datagram_p)
+void ipv4_datagram_free(ipv4_datagram_t **datagram_p)
 {
     if (datagram_p == NULL || *datagram_p == NULL)
     {
@@ -135,6 +138,7 @@ void print_ip_addr(ip_addr_t *ip)
     if (ip == NULL)
     {
         printf("No value.");
+
         return;
     }
 
@@ -144,6 +148,7 @@ void print_ip_addr(ip_addr_t *ip)
         {
             printf(".");
         }
+
         printf("%d", ip->byte[i]);
     }
 }

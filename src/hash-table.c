@@ -1,3 +1,5 @@
+// OK AFAIK
+
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -54,7 +56,7 @@ static HashNode_t *hash_table_create_node(const void *key, const void *data)
     return node;
 }
 
-const void *hash_table_search(HashTable_t *hash_table, const void *key)
+const void *hash_table_get_item(HashTable_t *hash_table, const void *key)
 {
     uint64_t hash_index = 0;
     ListNode_t *result = NULL;
@@ -77,7 +79,7 @@ const void *hash_table_search(HashTable_t *hash_table, const void *key)
     return NULL;
 }
 
-bool hash_table_insert_node(HashTable_t *hash_table, const void *key, const void *data)
+bool hash_table_add_item(HashTable_t *hash_table, const void *key, const void *data)
 {
     uint64_t hash_index = 0;
     ListNode_t *result = NULL;
@@ -95,7 +97,7 @@ bool hash_table_insert_node(HashTable_t *hash_table, const void *key, const void
 
     if (result != NULL)
     {
-        /* key already exists */
+        /* key already exists, overwrite */
         ((HashNode_t *)result)->data = data;
         return true;
     }
@@ -114,7 +116,7 @@ bool hash_table_insert_node(HashTable_t *hash_table, const void *key, const void
     return true;
 }
 
-bool hash_table_delete_node(HashTable_t *hash_table, const void *key)
+bool hash_table_remove_item(HashTable_t *hash_table, const void *key)
 {
     uint64_t hash_index = 0;
     ListNode_t *node = NULL;
@@ -140,11 +142,11 @@ bool hash_table_delete_node(HashTable_t *hash_table, const void *key)
     return true;
 }
 
-void hash_table_delete_table(HashTable_t **hash_table_p)
+void hash_table_free(HashTable_t **hash_table_p)
 {
     uint64_t i = 0;
+    ListNode_t **head_p = NULL;
     HashTable_t *hash_table = NULL;
-    HashNode_t *hash_node = NULL;
 
     if (hash_table_p == NULL || *hash_table_p == NULL)
     {
@@ -155,18 +157,14 @@ void hash_table_delete_table(HashTable_t **hash_table_p)
 
     for (i = 0; i < hash_table->capacity; i++)
     {
-        hash_node = hash_table->table[i];
-        while (hash_node != NULL)
-        {
-            linked_list_delete_node((ListNode_t **)&hash_node, (ListNode_t *)hash_node,
-                                    hash_table->free_data);
-            hash_table->size--;
-        }
+        head_p = (ListNode_t **)&hash_table->table[i];
+        hash_table->size -= linked_list_delete_list(head_p, hash_table->free_data);
     }
+
+    hash_table = NULL;
 
     free(*hash_table_p);
     *hash_table_p = NULL;
-    hash_table = NULL;
 
     return;
 }
