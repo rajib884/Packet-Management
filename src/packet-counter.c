@@ -10,7 +10,7 @@
 #define FNV1A_INIT 0xcbf29ce484222325ULL
 #define FNV1A_PRIME 0x100000001b3ULL
 
-#define HASH_TABLE_INITIAL_CAPACITY 100
+#define HASH_TABLE_INITIAL_CAPACITY 10
 
 static uint64_t hash_table_hash_func(const void *key, uint64_t true_hash_size)
 {
@@ -174,4 +174,7 @@ void packet_counter_free(packet_counter_t **counter_p)
     hash_table_free(&(*counter_p)->hash_table);
     linked_list_delete_list((ListNode_t **)&(*counter_p)->linked_list,
                             (*counter_p)->list_node_free);
+    free(*counter_p);
+    *counter_p = NULL;
+    return;
 }

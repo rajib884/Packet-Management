@@ -34,6 +34,7 @@ int main(void)
 
     print_packet_linked_list_packets(counter->linked_list);
     printf("hash_table size %lu\n", counter->hash_table->size);
+    printf("hash_table capacity %lu\n", counter->hash_table->capacity);
 
     wireshark_file_free(&ws_file);
     packet_counter_free(&counter);

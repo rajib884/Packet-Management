@@ -19,7 +19,7 @@ typedef struct HashTable
     hash_func_t hash_func;
     match_func_t match_func;
     free_data_t free_data;
-    HashNode_t *table[0];
+    HashNode_t **table;
 } HashTable_t;
 
 HashTable_t *hash_table_create(uint64_t, hash_func_t, match_func_t, free_data_t);
