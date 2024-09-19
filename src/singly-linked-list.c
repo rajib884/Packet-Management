@@ -1,12 +1,10 @@
-// OK AFAIK
-
 #include <stdio.h>
 #include <stdlib.h>
 
 #include "singly-linked-list.h"
 
 /* Function to delete a node from the linked list */
-void linked_list_delete_node(ListNode_t **head, ListNode_t *node, free_data_t free_data) // OK
+void linked_list_delete_node(ListNode_t **head, ListNode_t *node, free_data_t free_data)
 {
     ListNode_t *prev = NULL;
 
@@ -68,7 +66,7 @@ uint64_t linked_list_delete_list(ListNode_t **head, free_data_t free_data)
 }
 
 /* Function to insert a node at the head of the list */
-void linked_list_insert_at_head(ListNode_t **head, ListNode_t *new_node) // OK
+void linked_list_insert_at_head(ListNode_t **head, ListNode_t *new_node)
 {
     if (head == NULL || new_node == NULL)
     {

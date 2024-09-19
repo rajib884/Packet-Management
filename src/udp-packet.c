@@ -1,5 +1,3 @@
-// OK AFAIK
-
 #include <arpa/inet.h>
 #include <stdbool.h>
 #include <stdlib.h>

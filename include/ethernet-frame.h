@@ -1,5 +1,5 @@
-#ifndef __ETHERNET_PACKET_H__
-#define __ETHERNET_PACKET_H__
+#ifndef __ETHERNET_FRAME_H__
+#define __ETHERNET_FRAME_H__
 
 #include "dynamic-buffer.h"
 
@@ -36,4 +36,4 @@ void ethernet_frame_free(ethernet_frame_t **frame_p);
 void print_mac(mac_address_t *mac);
 void print_ethernet(ethernet_frame_t *frame, bool print_data);
 
-#endif /* __ETHERNET_PACKET_H__ */
+#endif /* __ETHERNET_FRAME_H__ */

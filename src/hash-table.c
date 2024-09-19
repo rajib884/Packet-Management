@@ -1,5 +1,3 @@
-// OK AFAIK
-
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -133,7 +131,7 @@ bool hash_table_remove_item(HashTable_t *hash_table, const void *key)
 
     if (node == NULL)
     {
-        return false; // Node not found
+        return false;
     }
 
     linked_list_delete_node(head_p, node, hash_table->free_data);

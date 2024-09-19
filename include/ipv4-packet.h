@@ -1,7 +1,7 @@
 #ifndef __IPV4_PACKET_H__
 #define __IPV4_PACKET_H__
 
-#include "ethernet-packet.h"
+#include "ethernet-frame.h"
 
 #define IP_ADDRESS_LENGTH 4
 

@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "ethernet-packet.h"
+#include "ethernet-frame.h"
 
 ethernet_frame_t *ethernet_frame_from_dynamic_buffer(dynamic_buffer_t *buffer)
 {
