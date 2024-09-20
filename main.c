@@ -1,9 +1,12 @@
 #include <inttypes.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/time.h>
 #include <unistd.h>
 
+#include "debug.h"
 #include "packet-counter.h"
+#include "udp-packet.h"
 #include "wireshark-to-buffer.h"
 
 packet_counter_t *counter = NULL;
@@ -15,8 +18,11 @@ int main(int argc, char *argv[])
     dynamic_buffer_t *buf = NULL;
     ethernet_frame_t *frame = NULL;
     ipv4_datagram_t *datagram = NULL;
+    udp_packet_t *packet = NULL;
     uint64_t packet_total = 0;
     uint64_t packet_valid = 0;
+
+    /* struct timeval stop, start; */
 
     if (argc != 2)
     {
@@ -37,28 +43,45 @@ int main(int argc, char *argv[])
     counter = packet_counter_create(); /* uses linked list and hash table to count packets */
     ws_file = wireshark_file_create(ws_file_path); /* wireshark file object to get packets*/
 
-    while (wireshark_file_readable(ws_file))
+    /* gettimeofday(&start, NULL); */
+
+    while (wireshark_file_readable(ws_file) && packet_valid < 10)
     {
         packet_total++;
+        printf("Packet %" PRIu64 "\n", packet_total);
 
         buf = wireshark_file_get_next_packet(ws_file);
         frame = ethernet_frame_from_dynamic_buffer(buf);
+        debug_call(print_ethernet, frame, false);
         dynamic_buffer_free(&buf);
         datagram = ipv4_datagram_from_ethernet_frame(frame);
+        debug_call(print_ipv4, datagram, false);
         ethernet_frame_free(&frame);
 
         if (datagram != NULL && datagram->header->protocol == IPV4_PROTOCOL_UDP)
         {
             packet_valid++;
             packet_counter_increase(counter, datagram);
+#ifdef DEBUG
+            packet = udp_packet_from_ipv4_datagram(datagram);
+            print_udp(packet, true);
+            udp_packet_free(&packet);
+#endif
         }
         else
         {
-            printf("%4" PRIu64 ". Invalid packet\n", packet_total);
+            printf("  Packet ignored\n");
         }
+
+        printf("\n");
 
         ipv4_datagram_free(&datagram);
     }
+
+    /*
+    gettimeofday(&stop, NULL);
+    printf("took %lu us\n", (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);
+    */
 
     print_packet_counter_hash_table(counter);
     print_packet_counter_linked_list(counter);

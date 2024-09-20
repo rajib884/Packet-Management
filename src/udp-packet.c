@@ -5,7 +5,7 @@
 
 #include "udp-packet.h"
 
-udp_packet_t *udp_packet_from_ipv4_datagram(ipv4_datagram_t *datagram)
+udp_packet_t *udp_packet_from_ipv4_datagram(ipv4_datagram_t *datagram) /* OK */
 {
     udp_packet_t *packet = NULL;
     udp_header_t *header = NULL;
@@ -14,7 +14,7 @@ udp_packet_t *udp_packet_from_ipv4_datagram(ipv4_datagram_t *datagram)
     uint16_t flags = 0;
     uint16_t fragment_offset = 0;
 
-    if (datagram == NULL)
+    if (datagram == NULL || datagram->header == NULL)
     {
         return NULL;
     }
@@ -48,6 +48,7 @@ udp_packet_t *udp_packet_from_ipv4_datagram(ipv4_datagram_t *datagram)
 
     if (header->length != datagram->data_len)
     {
+        /* Data might have been fragmented */
         flags = (uint16_t)datagram->header->fragment_offset_flag.fields.flags;
         fragment_offset = (uint16_t)datagram->header->fragment_offset_flag.fields.fragment_offset;
         more_fragments = flags & IPV4_MASK_FLAG_MORE_FRAGMENTS;
@@ -85,7 +86,7 @@ cleanup:
     return NULL;
 }
 
-void udp_packet_free(udp_packet_t **packet_p)
+void udp_packet_free(udp_packet_t **packet_p) /* OK */
 {
     if (packet_p == NULL || *packet_p == NULL)
     {
@@ -101,11 +102,11 @@ void udp_packet_free(udp_packet_t **packet_p)
     return;
 }
 
-void print_udp(udp_packet_t *packet, bool print_data)
+void print_udp(udp_packet_t *packet, bool print_data) /* OK */
 {
     uint32_t i = 0;
 
-    printf("UDP Packet:\n");
+    printf("  UDP Packet:\n");
 
     if (packet == NULL)
     {
@@ -114,23 +115,28 @@ void print_udp(udp_packet_t *packet, bool print_data)
         return;
     }
 
-    printf("  Source port: %04x\n", packet->header->source_port);
-    printf("  Destination port: %04x\n", packet->header->dest_port);
-    printf("  Length: %04x\n", packet->header->length);
-    printf("  Checksum: %04x\n", packet->header->checksum);
+    printf("    Source port: %04x\n", packet->header->source_port);
+    printf("    Destination port: %04x\n", packet->header->dest_port);
+    printf("    Length: %04x\n", packet->header->length);
+    printf("    Checksum: %04x\n", packet->header->checksum);
 
     if (print_data)
     {
         i = 0;
-        printf("  UDP Data: ");
+        printf("    UDP Data: ");
 
         while (i < packet->data_len)
         {
+            if (i % 32 == 0)
+            {
+                printf("\n    ");
+            }
+
             printf("%02x ", packet->data[i++]);
         }
-    }
 
-    printf("\n");
+        printf("\n");
+    }
 
     return;
 }

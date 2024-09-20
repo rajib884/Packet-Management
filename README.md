@@ -4,10 +4,10 @@ This C program reads a Wireshark packet capture txt file and counts the number o
 
 ### Usage
 
-1. **Compile the Code:** Use option `-DUSE_UNICODE` if your terminal supports printing unicode characters.
+1. **Compile the Code:** Use option `-DUSE_UNICODE` if your terminal supports printing unicode characters. `-DDEBUG` is used to print detailed info about each packets.
 
    ```bash
-   gcc main.c src/*.c -Iinclude -o main -DUSE_UNICODE
+   gcc main.c src/*.c -Iinclude -o main -DUSE_UNICODE -DDEBUG
    ```
 
 2. **Run the Program:**

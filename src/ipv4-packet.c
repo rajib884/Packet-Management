@@ -5,7 +5,7 @@
 
 #include "ipv4-packet.h"
 
-ipv4_datagram_t *ipv4_datagram_from_ethernet_frame(ethernet_frame_t *frame)
+ipv4_datagram_t *ipv4_datagram_from_ethernet_frame(ethernet_frame_t *frame) /* OK */
 {
     ipv4_header_t *header = NULL;
     uint8_t *options = NULL;
@@ -14,7 +14,7 @@ ipv4_datagram_t *ipv4_datagram_from_ethernet_frame(ethernet_frame_t *frame)
     size_t data_len = 0;
     size_t options_len = 0;
 
-    if (frame == NULL)
+    if (frame == NULL || frame->header == NULL)
     {
         return NULL;
     }
@@ -73,6 +73,7 @@ ipv4_datagram_t *ipv4_datagram_from_ethernet_frame(ethernet_frame_t *frame)
 
     if (header->total_length != frame->data_len)
     {
+        /* There may be padding bits added by ethernet protocol */
         if (frame->data_len != ETHERNET_MINIMUM_DATA_LEN ||
             header->total_length > ETHERNET_MINIMUM_DATA_LEN)
         {
@@ -110,7 +111,7 @@ cleanup:
     return NULL;
 }
 
-void ipv4_datagram_free(ipv4_datagram_t **datagram_p)
+void ipv4_datagram_free(ipv4_datagram_t **datagram_p) /* OK */
 {
     if (datagram_p == NULL || *datagram_p == NULL)
     {
@@ -129,7 +130,7 @@ void ipv4_datagram_free(ipv4_datagram_t **datagram_p)
     return;
 }
 
-int print_ip_addr(ip_addr_t *ip)
+int print_ip_addr(ip_addr_t *ip) /* OK */
 {
     uint32_t i = 0;
     int count = 0;
@@ -156,45 +157,70 @@ void print_ipv4(ipv4_datagram_t *datagram, bool print_data)
 {
     uint32_t i = 0;
 
-    printf("IPv4 Datagram:\n");
+    printf("  IPv4 Datagram:\n");
 
-    if (datagram == NULL)
+    if (datagram == NULL || datagram->header == NULL)
     {
-        printf("  NULL\n");
+        printf("    NULL\n");
 
         return;
     }
 
-    printf("  version: %02x\n", datagram->header->version);
-    printf("  IHL: %02x\n", datagram->header->header_length);
-    printf("  type_of_service: %02x\n", datagram->header->type_of_service);
-    printf("  total_length: %04x\n", datagram->header->total_length);
-    printf("  identification: %04x\n", datagram->header->identification);
-    printf("  flags: %03b\n", datagram->header->fragment_offset_flag.fields.flags);
-    printf("  fragment_offset: %013b\n",
+    printf("    version: %02x\n", datagram->header->version);
+    printf("    IHL: %02x\n", datagram->header->header_length);
+    printf("    type_of_service: %02x\n", datagram->header->type_of_service);
+    printf("    total_length: %04x\n", datagram->header->total_length);
+    printf("    identification: %04x\n", datagram->header->identification);
+    printf("    flags: %x\n", datagram->header->fragment_offset_flag.fields.flags);
+    printf("    fragment_offset: %04x\n",
            datagram->header->fragment_offset_flag.fields.fragment_offset);
-    printf("  time_to_live: %02x\n", datagram->header->time_to_live);
-    printf("  protocol: %02x\n", datagram->header->protocol);
-    printf("  checksum: %04x\n", datagram->header->checksum);
-    printf("  Source IP: ");
+    printf("    time_to_live: %02x\n", datagram->header->time_to_live);
+    printf("    protocol: %02x (%s)\n", datagram->header->protocol,
+           (datagram->header->protocol == IPV4_PROTOCOL_UDP) ? "UDP" : "Non-UDP");
+    printf("    checksum: %04x\n", datagram->header->checksum);
+    printf("    Source IP: ");
     print_ip_addr(&datagram->header->source_address);
     printf("\n");
-    printf("  Destination IP: ");
+    printf("    Destination IP: ");
     print_ip_addr(&datagram->header->destination_address);
     printf("\n");
+    printf("    Options: ");
+    if (datagram->option_len == 0)
+    {
+        printf("None\n");
+    }
+    else
+    {
+        i = 0;
+
+        while (i < datagram->option_len)
+        {
+            if (i % 32 == 0)
+            {
+                printf("\n    ");
+            }
+
+            printf("%02x ", datagram->options[i++]);
+        }
+        printf("\n");
+    }
 
     if (print_data)
     {
         i = 0;
-        printf(" IPv4 Data: ");
+        printf("    Data:");
 
         while (i < datagram->data_len)
         {
+            if (i % 32 == 0)
+            {
+                printf("\n    ");
+            }
+
             printf("%02x ", datagram->data[i++]);
         }
+        printf("\n");
     }
-
-    printf("\n");
 
     return;
 }

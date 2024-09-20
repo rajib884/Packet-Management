@@ -6,13 +6,29 @@
 static HashNode_t *hash_table_create_node(const void *key, const void *data);
 static bool hash_table_rehash(HashTable_t *hash_table, uint64_t new_capacity);
 
+/*****************************************************************************
+ *
+ *   Name:       hash_table_create
+ *
+ *   Input:      capacity     Number of items the hash table can hold, can be changed later
+ *               hash_func    A function used for hashing keys
+ *               match_func   A function used for matching keys
+ *               free_node    A function used for freeing HashNode_t
+ *
+ *   Return:     Success      A pointer to the newly created HashTable_t
+ *               Failed       NULL
+ *
+ *   Description:            Initializes a new hash table with the specified capacity
+ *                           and function pointers. Returns NULL if any parameters
+ *                           are invalid or if memory allocation fails.
+ ******************************************************************************/
 HashTable_t *hash_table_create(uint64_t capacity, hash_func_t hash_func, match_func_t match_func,
-                               free_data_t free_data)
+                               free_data_t free_node) /* OK */
 {
     HashTable_t *hash_table = NULL;
     HashNode_t **table = NULL;
 
-    if (capacity == 0 || hash_func == NULL || match_func == NULL)
+    if (capacity == 0 || hash_func == NULL || match_func == NULL || free_node == NULL)
     {
         fprintf(stderr, "Invalid parameter for creating hash table\n");
 
@@ -42,13 +58,25 @@ HashTable_t *hash_table_create(uint64_t capacity, hash_func_t hash_func, match_f
     hash_table->capacity = capacity;
     hash_table->hash_func = hash_func;
     hash_table->match_func = match_func;
-    hash_table->free_data = free_data;
+    hash_table->free_node = free_node;
     hash_table->table = table;
 
     return hash_table;
 }
 
-static HashNode_t *hash_table_create_node(const void *key, const void *data)
+/*****************************************************************************
+ *
+ *   Name:       hash_table_create_node
+ *
+ *   Input:      key         Key associated with the new node
+ *               data        Data associated with the new node
+ *
+ *   Return:     Success      A pointer to the newly created HashNode_t
+ *               Failed       NULL
+ *
+ *   Description:            Creates a new hash node with the given key and data.
+ ******************************************************************************/
+static HashNode_t *hash_table_create_node(const void *key, const void *data) /* OK */
 {
     HashNode_t *node = NULL;
 
@@ -62,6 +90,7 @@ static HashNode_t *hash_table_create_node(const void *key, const void *data)
     if (node == NULL)
     {
         fprintf(stderr, "Unable to allocate memory for Hash Node.\n");
+
         return NULL;
     }
 
@@ -71,18 +100,34 @@ static HashNode_t *hash_table_create_node(const void *key, const void *data)
     return node;
 }
 
-const void *hash_table_get_item(HashTable_t *hash_table, const void *key)
+/*****************************************************************************
+ *
+ *   Name:       hash_table_get_item
+ *
+ *   Input:      hash_table   Hash table from which to retrieve an item
+ *               key          Key of the item to retrieve
+ *
+ *   Return:     Success      Data associated with the key
+ *               Failed       NULL
+ *
+ *   Description:            Retrieves the data associated with the specified key
+ *                           from the hash table. Returns NULL if the hash table
+ *                           is NULL, the key is NULL, or if the key does not exist
+ *                           in the table.
+ ******************************************************************************/
+const void *hash_table_get_item(HashTable_t *hash_table, const void *key) /* OK */
 {
     uint64_t hash_index = 0;
     ListNode_t *result = NULL;
     ListNode_t **head_p = NULL;
 
-    if (hash_table == NULL || key == NULL)
+    if (hash_table == NULL || key == NULL || hash_table->table == NULL)
     {
         return NULL;
     }
 
     hash_index = hash_table->hash_func(key, hash_table->capacity);
+    hash_index = hash_index % hash_table->capacity; /* Just to be safe */
     head_p = (ListNode_t **)&hash_table->table[hash_index];
     result = linked_list_search(head_p, key, hash_table->match_func);
 
@@ -94,35 +139,62 @@ const void *hash_table_get_item(HashTable_t *hash_table, const void *key)
     return NULL;
 }
 
-bool hash_table_add_item(HashTable_t *hash_table, const void *key, const void *data)
+/*****************************************************************************
+ *
+ *   Name:       hash_table_add_item
+ *
+ *   Input:      hash_table   Hash table where the item will be added
+ *               key          Key associated with the item
+ *               data         Data to be stored
+ *
+ *   Return:     Success      true if the item was added or updated successfully
+ *               Failed       false if the operation failed
+ *
+ *   Description:            Adds a new item to the hash table or updates the data
+ *                           if the key already exists. Rehashes the table if the
+ *                           number of items exceeds the current capacity.
+ ******************************************************************************/
+bool hash_table_add_item(HashTable_t *hash_table, const void *key, const void *data) /* OK */
 {
     uint64_t hash_index = 0;
+    uint64_t new_capacity = 0;
     ListNode_t *result = NULL;
     HashNode_t *new_node = NULL;
     ListNode_t **head_p = NULL;
 
-    if (hash_table == NULL || key == NULL || data == NULL)
+    if (hash_table == NULL || key == NULL || data == NULL || hash_table->table == NULL)
     {
         return false;
     }
 
     if (hash_table->size > hash_table->capacity)
     {
-        hash_table_rehash(hash_table, hash_table->capacity * 2);
+        if (hash_table->capacity > UINT64_MAX / 2)
+        {
+            new_capacity = UINT64_MAX;
+        }
+        else
+        {
+            new_capacity = hash_table->capacity * 2;
+        }
+
+        hash_table_rehash(hash_table, new_capacity);
     }
 
     hash_index = hash_table->hash_func(key, hash_table->capacity);
+    hash_index = hash_index % hash_table->capacity; /* Just to be safe */
     head_p = (ListNode_t **)&hash_table->table[hash_index];
     result = linked_list_search(head_p, key, hash_table->match_func);
 
     if (result != NULL)
     {
-        /* key already exists, overwrite */
-        ((HashNode_t *)result)->data = data;
+        ((HashNode_t *)result)->data = data; /* key already exists, overwrite */
+
         return true;
     }
 
     new_node = hash_table_create_node(key, data);
+
     if (new_node == NULL)
     {
         return false;
@@ -134,7 +206,7 @@ bool hash_table_add_item(HashTable_t *hash_table, const void *key, const void *d
     return true;
 }
 
-static bool hash_table_rehash(HashTable_t *hash_table, uint64_t new_capacity)
+static bool hash_table_rehash(HashTable_t *hash_table, uint64_t new_capacity) /* OK */
 {
     uint64_t i = 0;
     uint64_t hash_index = 0;
@@ -142,7 +214,7 @@ static bool hash_table_rehash(HashTable_t *hash_table, uint64_t new_capacity)
     ListNode_t **head_p = NULL;
     HashNode_t *node = NULL;
 
-    if (new_capacity == 0)
+    if (hash_table == NULL || new_capacity == 0 || hash_table->table == NULL)
     {
         return false;
     }
@@ -158,13 +230,14 @@ static bool hash_table_rehash(HashTable_t *hash_table, uint64_t new_capacity)
     {
         while (hash_table->table[i] != NULL)
         {
-            node = hash_table->table[i];
-            head_p = (ListNode_t **)&hash_table->table[i];
-            linked_list_delete_node(head_p, *head_p, NULL);
+            node = hash_table->table[i];                    /* Save head of old list to node */
+            head_p = (ListNode_t **)&hash_table->table[i];  /* Address of head of old list */
+            linked_list_delete_node(head_p, *head_p, NULL); /* Move head to next node */
 
-            hash_index = hash_table->hash_func(node->key, new_capacity);
-            head_p = (ListNode_t **)&new_table[hash_index];
-            linked_list_insert_at_head(head_p, (ListNode_t *)node);
+            hash_index = hash_table->hash_func(node->key, new_capacity); /* Get new index */
+            hash_index = hash_index % hash_table->capacity;              /* Just to be safe */
+            head_p = (ListNode_t **)&new_table[hash_index];              /* Address of new list */
+            linked_list_insert_at_head(head_p, (ListNode_t *)node);      /* Add node to new list */
         }
     }
 
@@ -175,39 +248,65 @@ static bool hash_table_rehash(HashTable_t *hash_table, uint64_t new_capacity)
     return true;
 }
 
-bool hash_table_remove_item(HashTable_t *hash_table, const void *key)
+/*****************************************************************************
+ *
+ *   Name:       hash_table_remove_item
+ *
+ *   Input:      hash_table   Hash table from which to remove an item
+ *               key          Key of the item to be removed
+ *
+ *   Return:     Success      true if the item was removed successfully
+ *               Failed       false if the operation failed
+ *
+ *   Description:            Removes the item associated with the specified key
+ *                           from the hash table.
+ ******************************************************************************/
+bool hash_table_remove_item(HashTable_t *hash_table, const void *key) /* OK */
 {
     uint64_t hash_index = 0;
     ListNode_t *node = NULL;
     ListNode_t **head_p = NULL;
 
-    if (hash_table == NULL || key == NULL)
+    if (hash_table == NULL || key == NULL || hash_table->table == NULL)
     {
         return false;
     }
 
     hash_index = hash_table->hash_func(key, hash_table->capacity);
+    hash_index = hash_index % hash_table->capacity; /* Just to be safe */
     head_p = (ListNode_t **)&hash_table->table[hash_index];
     node = linked_list_search(head_p, key, hash_table->match_func);
 
     if (node == NULL)
     {
-        return false;
+        return false; /* item was not found */
     }
 
-    linked_list_delete_node(head_p, node, hash_table->free_data);
+    linked_list_delete_node(head_p, node, hash_table->free_node);
     hash_table->size--;
 
     return true;
 }
 
-void hash_table_free(HashTable_t **hash_table_p)
+/*****************************************************************************
+ *
+ *   Name:       hash_table_free
+ *
+ *   Input:      hash_table_p  A pointer to a pointer to the hash table to be freed
+ *
+ *   Return:     None
+ *
+ *   Description:            Frees all memory associated with the specified hash table,
+ *                           including its nodes and the table itself. After freeing,
+ *                           the hash table pointer is set to NULL.
+ ******************************************************************************/
+void hash_table_free(HashTable_t **hash_table_p) /* OK */
 {
     uint64_t i = 0;
     ListNode_t **head_p = NULL;
     HashTable_t *hash_table = NULL;
 
-    if (hash_table_p == NULL || *hash_table_p == NULL)
+    if (hash_table_p == NULL || *hash_table_p == NULL || (*hash_table_p)->table == NULL)
     {
         return;
     }
@@ -217,7 +316,7 @@ void hash_table_free(HashTable_t **hash_table_p)
     for (i = 0; i < hash_table->capacity; i++)
     {
         head_p = (ListNode_t **)&hash_table->table[i];
-        hash_table->size -= linked_list_delete_list(head_p, hash_table->free_data);
+        hash_table->size -= linked_list_delete_list(head_p, hash_table->free_node);
     }
 
     free(hash_table->table);

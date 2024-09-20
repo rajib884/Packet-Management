@@ -18,7 +18,7 @@ typedef struct HashTable
     uint64_t size;
     hash_func_t hash_func;
     match_func_t match_func;
-    free_data_t free_data;
+    free_data_t free_node;
     HashNode_t **table;
 } HashTable_t;
 

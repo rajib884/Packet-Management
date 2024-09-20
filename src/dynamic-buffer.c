@@ -4,7 +4,17 @@
 
 #include "dynamic-buffer.h"
 
-dynamic_buffer_t *dynamic_buffer_create(size_t initial_capacity)
+/*****************************************************************************
+ *
+ *   Name:       dynamic_buffer_create
+ *
+ *   Input:      initial_capacity  Initial capacity of the dynamic buffer
+ *   Return:     Success           A pointer to the newly created dynamic_buffer_t
+ *               Failed            NULL
+ *   Description:            Allocates and initializes a dynamic buffer with the
+ *                           specified initial capacity.
+ ******************************************************************************/
+dynamic_buffer_t *dynamic_buffer_create(size_t initial_capacity) /* OK */
 {
     dynamic_buffer_t *buf = NULL;
 
@@ -36,7 +46,17 @@ dynamic_buffer_t *dynamic_buffer_create(size_t initial_capacity)
     return buf;
 }
 
-bool dynamic_buffer_resize(dynamic_buffer_t *buf, size_t new_capacity)
+/*****************************************************************************
+ *
+ *   Name:       dynamic_buffer_resize
+ *
+ *   Input:      buf              A pointer to the dynamic buffer to resize
+ *               new_capacity     The new capacity for the dynamic buffer
+ *   Return:     Success          true if the buffer was resized successfully
+ *               Failed           false if the operation failed
+ *   Description:            Resizes the dynamic buffer to the specified new capacity.
+ ******************************************************************************/
+bool dynamic_buffer_resize(dynamic_buffer_t *buf, size_t new_capacity) /* OK */
 {
     uint8_t *new_data = NULL;
 
@@ -58,12 +78,24 @@ bool dynamic_buffer_resize(dynamic_buffer_t *buf, size_t new_capacity)
     return true;
 }
 
-bool dynamic_buffer_add_data(dynamic_buffer_t *buf, const uint8_t *data, size_t data_size)
+/*****************************************************************************
+ *
+ *   Name:       dynamic_buffer_add_data
+ *
+ *   Input:      buf              A pointer to the dynamic buffer to which data will be added
+ *               data             A pointer to the data to be added
+ *               data_size        The size of the data to be added
+ *   Return:     Success          true if the data was added successfully
+ *               Failed           false if the operation failed
+ *   Description:            Adds the specified data to the dynamic buffer. Automatically
+ *                           resizes the buffer if the current capacity is insufficient.
+ ******************************************************************************/
+bool dynamic_buffer_add_data(dynamic_buffer_t *buf, const uint8_t *data, size_t data_size) /* OK */
 {
     size_t needed_capacity = 0;
     size_t capacity = 0;
 
-    if (buf == NULL || data == NULL)
+    if (buf == NULL || data == NULL || buf->capacity == 0)
     {
         return false;
     }
@@ -74,12 +106,23 @@ bool dynamic_buffer_add_data(dynamic_buffer_t *buf, const uint8_t *data, size_t 
 
     while (capacity < needed_capacity)
     {
-        capacity = capacity * 2;
+        if (capacity > SIZE_MAX / 2)
+        {
+            capacity = SIZE_MAX;
+            break;
+        }
+
+        capacity *= 2;
     }
 
     if (capacity > buf->capacity && !dynamic_buffer_resize(buf, capacity))
     {
         return false;
+    }
+
+    if (buf->capacity < buf->size + data_size)
+    {
+        return false; /* Prevent overflow */
     }
 
     /* Copy the data */
@@ -89,9 +132,18 @@ bool dynamic_buffer_add_data(dynamic_buffer_t *buf, const uint8_t *data, size_t 
     return true;
 }
 
-void dynamic_buffer_free(dynamic_buffer_t **buf_p)
+/*****************************************************************************
+ *
+ *   Name:       dynamic_buffer_free
+ *
+ *   Input:      buf_p            A pointer to a pointer to the dynamic buffer to free
+ *   Return:     None
+ *   Description:            Frees all memory associated with the specified dynamic buffer.
+ *                           The buffer pointer is set to NULL after freeing.
+ ******************************************************************************/
+void dynamic_buffer_free(dynamic_buffer_t **buf_p) /* OK */
 {
-    if (buf_p == NULL)
+    if (buf_p == NULL || *buf_p == NULL)
     {
         return;
     }

@@ -1,5 +1,3 @@
-// OK AFAIK RENAME
-
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <stdlib.h>
@@ -7,7 +5,7 @@
 
 #include "ethernet-frame.h"
 
-ethernet_frame_t *ethernet_frame_from_dynamic_buffer(dynamic_buffer_t *buffer)
+ethernet_frame_t *ethernet_frame_from_dynamic_buffer(dynamic_buffer_t *buffer) /* OK? */
 {
     ethernet_header_t *header = NULL;
     ethernet_frame_t *frame = NULL;
@@ -60,7 +58,7 @@ cleanup:
     return NULL;
 }
 
-void ethernet_frame_free(ethernet_frame_t **frame_p)
+void ethernet_frame_free(ethernet_frame_t **frame_p) /* OK */
 {
     if (frame_p == NULL || *frame_p == NULL)
     {
@@ -76,7 +74,7 @@ void ethernet_frame_free(ethernet_frame_t **frame_p)
     return;
 }
 
-void print_mac(mac_address_t *mac)
+void print_mac(mac_address_t *mac) /* OK */
 {
     uint32_t i = 0;
 
@@ -96,42 +94,44 @@ void print_mac(mac_address_t *mac)
 
         printf("%02X", mac->bytes[i]);
     }
+
+    return;
 }
 
-void print_ethernet(ethernet_frame_t *frame, bool print_data)
+void print_ethernet(ethernet_frame_t *frame, bool print_data) /* OK */
 {
     uint32_t i = 0;
 
-    printf("Ethernet Packet:\n");
+    printf("  Ethernet Packet:\n");
 
-    if (frame == NULL)
+    if (frame == NULL || frame->header == NULL)
     {
-        printf("  NULL\n");
+        printf("    NULL\n");
 
         return;
     }
 
-    printf("  Destination MAC: ");
+    printf("    Destination MAC: ");
     print_mac(&frame->header->destination);
     printf("\n");
-
-    printf("  Source MAC: ");
+    printf("    Source MAC: ");
     print_mac(&frame->header->source);
     printf("\n");
-
-    printf("  Ethertype: 0x%04X\n", frame->header->ethertype);
+    printf("    Ethertype: 0x%04X (%s)\n", frame->header->ethertype,
+           (frame->header->ethertype == ETHERTYPE_IPV4) ? "IPv4" : "Non-IPv4");
 
     if (print_data)
     {
         i = 0;
-        printf("  Ethernet Data: ");
+        printf("    Ethernet Data: ");
 
         while (i < frame->data_len)
         {
             printf("%02x ", frame->data[i++]);
         }
+
+        printf("\n");
     }
-    printf("\n");
 
     return;
 }
