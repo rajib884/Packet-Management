@@ -21,7 +21,7 @@ ipv4_datagram_t *ipv4_datagram_from_ethernet_frame(ethernet_frame_t *frame)
 
     if (frame->header->ethertype != ETHERTYPE_IPV4)
     {
-        fprintf(stderr, "Ethernet data is not IPv4 type.\n");
+        /* fprintf(stderr, "Ethernet data is not IPv4 type.\n"); */
         goto cleanup;
     }
 

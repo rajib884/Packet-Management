@@ -12,6 +12,10 @@
 #define FNV1A_PRIME 0x100000001b3ULL
 
 #define HASH_TABLE_INITIAL_CAPACITY 10
+#define SPACE_FOR_IP 15
+#define SPACE_FOR_COUNT 7
+
+#define MAX(a, b) (((a) < (b)) ? (b) : (a))
 
 static uint64_t hash_table_hash_func(const void *key, uint64_t true_hash_size)
 {
@@ -94,26 +98,25 @@ void print_packet_counter_hash_table(packet_counter_t *counter)
 {
     HashTable_t *ht = counter->hash_table;
     uint64_t i = 0;
-    uint64_t count = 0;
-    uint64_t total = 0;
+    int count = 0;
     HashNode_t *current = NULL;
 
 #ifdef USE_UNICODE
-    printf("┌───────────────────────────────────────────┐\n");
-    printf("│                Hash Table                 │\n");
-    printf("├───────┬───────────────────────────────────┤\n");
-    printf("│       │                Key                │\n");
-    printf("│ Index ├─────────────────┬─────────────────┤\n");
-    printf("│       │    Source IP    │  Destination IP │\n");
-    printf("├───────┼─────────────────┼─────────────────┤\n");
+    printf("┌─────────────────────────────────────────────────────┐\n");
+    printf("│                     Hash Table                      │\n");
+    printf("├───────┬───────────────────────────────────┬─────────┤\n");
+    printf("│       │                Key                │         │\n");
+    printf("│ Index ├─────────────────┬─────────────────┤  Count  │\n");
+    printf("│       │    Source IP    │  Destination IP │         │\n");
+    printf("├───────┼─────────────────┼─────────────────┼─────────┤\n");
 #else
-    printf("+-------------------------------------------+\n");
-    printf("|                Hash Table                 |\n");
-    printf("+-------+-----------------------------------+\n");
-    printf("|       |                Key                |\n");
-    printf("| Index +-----------------+-----------------+\n");
-    printf("|       |    Source IP    |  Destination IP |\n");
-    printf("+-------+-----------------+-----------------+\n");
+    printf("+-----------------------------------------------------+\n");
+    printf("|                     Hash Table                      |\n");
+    printf("+-------+-----------------------------------+---------+\n");
+    printf("|       |                Key                |         +\n");
+    printf("| Index +-----------------+-----------------+  Count  +\n");
+    printf("|       |    Source IP    |  Destination IP |         +\n");
+    printf("+-------+-----------------+-----------------+---------+\n");
 #endif
 
     for (i = 0; i < ht->capacity; i++)
@@ -122,8 +125,8 @@ void print_packet_counter_hash_table(packet_counter_t *counter)
 
         if (current == NULL)
         {
-            printf(PIPE2 " %5" PRIu64 " " PIPE2 " %*s " PIPE2 " %*s " PIPE2 "\n", i, 15, "", 15,
-                   "");
+            printf(PIPE2 " %5" PRIu64 " " PIPE2 " %*s " PIPE2 " %*s " PIPE2 " %*s " PIPE2 "\n", i,
+                   SPACE_FOR_IP, "", SPACE_FOR_IP, "", SPACE_FOR_COUNT, "");
         }
 
         while (current != NULL)
@@ -136,25 +139,27 @@ void print_packet_counter_hash_table(packet_counter_t *counter)
             {
                 printf(PIPE2 "       " PIPE2 " ");
             }
+
             count = print_ip_addr((ip_addr_t *)current->key);
-            printf("%*s " PIPE2 " ", (15 - count < 0) ? 0 : 15 - count, "");
+            printf("%*s " PIPE2 " ", MAX(SPACE_FOR_IP - count, 0), "");
             count = print_ip_addr((ip_addr_t *)(current->key + sizeof(ip_addr_t)));
-            printf("%*s " PIPE2 " ", (15 - count < 0) ? 0 : 15 - count, "");
-            printf("\n");
+            printf("%*s " PIPE2 " ", MAX(SPACE_FOR_IP - count, 0), "");
+            printf("%*" PRIu64 " " PIPE2 "\n", SPACE_FOR_COUNT,
+                   ((packet_node_t *)(current->data))->ref_counter);
             current = (HashNode_t *)current->node.next;
         }
 
 #ifdef USE_UNICODE
         if (i == ht->capacity - 1)
         {
-            printf("└───────┴─────────────────┴─────────────────┘\n");
+            printf("└───────┴─────────────────┴─────────────────┴─────────┘\n");
         }
         else
         {
-            printf("├───────┼─────────────────┼─────────────────┤\n");
+            printf("├───────┼─────────────────┼─────────────────┼─────────┤\n");
         }
 #else
-        printf("+-------+-----------------+-----------------+\n");
+        printf("+-------+-----------------+-----------------+---------+\n");
 #endif
     }
 
@@ -188,10 +193,10 @@ void print_packet_counter_linked_list(packet_counter_t *counter)
     {
         printf(PIPE2 " %5" PRIu64 " " PIPE2 " ", ++i);
         count = print_ip_addr(&current->src);
-        printf("%*s " PIPE2 " ", (15 - count < 0) ? 0 : 15 - count, "");
+        printf("%*s " PIPE2 " ", MAX(SPACE_FOR_IP - count, 0), "");
         count = print_ip_addr(&current->dest);
-        printf("%*s " PIPE2 " ", (15 - count < 0) ? 0 : 15 - count, "");
-        printf("%7" PRIu64 " " PIPE2 "\n", current->ref_counter);
+        printf("%*s " PIPE2 " ", MAX(SPACE_FOR_IP - count, 0), "");
+        printf("%*" PRIu64 " " PIPE2 "\n", SPACE_FOR_COUNT, current->ref_counter);
 
         total += current->ref_counter;
 
@@ -200,11 +205,13 @@ void print_packet_counter_linked_list(packet_counter_t *counter)
 
 #ifdef USE_UNICODE
     printf("├───────┴─────────────────┴─────────────────┼─────────┤\n");
-    printf("│                                     Total │ %7" PRIu64 " │\n", total);
+    printf("│                                     Total │ %*" PRIu64 " │\n", SPACE_FOR_COUNT,
+           total);
     printf("└───────────────────────────────────────────┴─────────┘\n");
 #else
     printf("+-------+-----------------+-----------------+---------+\n");
-    printf("|                                     Total | %7" PRIu64 " |\n", total);
+    printf("|                                     Total | %*" PRIu64 " |\n", SPACE_FOR_COUNT,
+           total);
     printf("+-------------------------------------------+---------+\n");
 #endif
 
