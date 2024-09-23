@@ -9,6 +9,10 @@
 #include "udp-packet.h"
 #include "wireshark-to-buffer.h"
 
+#define ARGUMENT_LENGTH 2
+#define ARGUMENT_FILE_PATH_INDEX 1
+#define FILE_EXISTS 0
+
 packet_counter_t *counter = NULL;
 
 int main(int argc, char *argv[])
@@ -18,22 +22,22 @@ int main(int argc, char *argv[])
     dynamic_buffer_t *buf = NULL;
     ethernet_frame_t *frame = NULL;
     ipv4_datagram_t *datagram = NULL;
-    udp_packet_t *packet = NULL;
     uint64_t packet_total = 0;
     uint64_t packet_valid = 0;
+#ifdef DEBUG
+    udp_packet_t *packet = NULL;
+#endif
 
-    /* struct timeval stop, start; */
-
-    if (argc != 2)
+    if (argc != ARGUMENT_LENGTH)
     {
         fprintf(stderr, "Usage: %s <file_path>\n", argv[0]);
 
         return EXIT_FAILURE;
     }
 
-    ws_file_path = argv[1];
+    ws_file_path = argv[ARGUMENT_FILE_PATH_INDEX];
 
-    if (access(ws_file_path, F_OK) != 0)
+    if (access(ws_file_path, F_OK) != FILE_EXISTS)
     {
         perror("File does not exist\n");
 
@@ -43,19 +47,17 @@ int main(int argc, char *argv[])
     counter = packet_counter_create(); /* uses linked list and hash table to count packets */
     ws_file = wireshark_file_create(ws_file_path); /* wireshark file object to get packets*/
 
-    /* gettimeofday(&start, NULL); */
-
-    while (wireshark_file_readable(ws_file) && packet_valid < 10)
+    while (wireshark_file_readable(ws_file))
     {
         packet_total++;
         printf("Packet %" PRIu64 "\n", packet_total);
 
         buf = wireshark_file_get_next_packet(ws_file);
         frame = ethernet_frame_from_dynamic_buffer(buf);
-        debug_call(print_ethernet, frame, false);
+        if_debug_call(print_ethernet, frame, false);
         dynamic_buffer_free(&buf);
         datagram = ipv4_datagram_from_ethernet_frame(frame);
-        debug_call(print_ipv4, datagram, false);
+        if_debug_call(print_ipv4, datagram, false);
         ethernet_frame_free(&frame);
 
         if (datagram != NULL && datagram->header->protocol == IPV4_PROTOCOL_UDP)
@@ -66,11 +68,13 @@ int main(int argc, char *argv[])
             packet = udp_packet_from_ipv4_datagram(datagram);
             print_udp(packet, true);
             udp_packet_free(&packet);
+#else
+            printf("  Packet valid, counted\n");
 #endif
         }
         else
         {
-            printf("  Packet ignored\n");
+            printf("  Packet invalid, ignored\n");
         }
 
         printf("\n");
@@ -78,19 +82,14 @@ int main(int argc, char *argv[])
         ipv4_datagram_free(&datagram);
     }
 
-    /*
-    gettimeofday(&stop, NULL);
-    printf("took %lu us\n", (stop.tv_sec - start.tv_sec) * 1000000 + stop.tv_usec - start.tv_usec);
-    */
+    wireshark_file_free(&ws_file);
 
     print_packet_counter_hash_table(counter);
     print_packet_counter_linked_list(counter);
-
-    wireshark_file_free(&ws_file);
     packet_counter_free(&counter);
 
     printf("There was total %" PRIu64 " packets in file %s\n", packet_total, ws_file_path);
     printf("Out of which %" PRIu64 " packets were valid IPv4 UDP packet.\n", packet_valid);
 
-    return 0;
+    return EXIT_SUCCESS;
 }

@@ -3,9 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "common.h"
 #include "ethernet-frame.h"
 
-ethernet_frame_t *ethernet_frame_from_dynamic_buffer(dynamic_buffer_t *buffer) /* OK? */
+ethernet_frame_t *ethernet_frame_from_dynamic_buffer(dynamic_buffer_t *buffer)
 {
     ethernet_header_t *header = NULL;
     ethernet_frame_t *frame = NULL;
@@ -58,7 +59,7 @@ cleanup:
     return NULL;
 }
 
-void ethernet_frame_free(ethernet_frame_t **frame_p) /* OK */
+void ethernet_frame_free(ethernet_frame_t **frame_p)
 {
     if (frame_p == NULL || *frame_p == NULL)
     {
@@ -74,7 +75,7 @@ void ethernet_frame_free(ethernet_frame_t **frame_p) /* OK */
     return;
 }
 
-void print_mac(mac_address_t *mac) /* OK */
+void print_mac(mac_address_t *mac)
 {
     uint32_t i = 0;
 
@@ -98,10 +99,8 @@ void print_mac(mac_address_t *mac) /* OK */
     return;
 }
 
-void print_ethernet(ethernet_frame_t *frame, bool print_data) /* OK */
+void print_ethernet(ethernet_frame_t *frame, bool print_data)
 {
-    uint32_t i = 0;
-
     printf("  Ethernet Packet:\n");
 
     if (frame == NULL || frame->header == NULL)
@@ -122,15 +121,8 @@ void print_ethernet(ethernet_frame_t *frame, bool print_data) /* OK */
 
     if (print_data)
     {
-        i = 0;
-        printf("    Ethernet Data: ");
-
-        while (i < frame->data_len)
-        {
-            printf("%02x ", frame->data[i++]);
-        }
-
-        printf("\n");
+        printf("    Data:");
+        print_data_f(frame->data, frame->data_len);
     }
 
     return;

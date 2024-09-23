@@ -10,7 +10,7 @@
 #define FNV1A_INIT 0xcbf29ce484222325ULL
 #define FNV1A_PRIME 0x100000001b3ULL
 
-#define HASH_TABLE_INITIAL_CAPACITY 10
+#define HASH_TABLE_INITIAL_CAPACITY 7
 #define SPACE_FOR_IP 15
 #define SPACE_FOR_COUNT 7
 #define SPACE_FOR_INDEX 5
@@ -23,7 +23,7 @@
 
 #define MAX(a, b) (((a) < (b)) ? (b) : (a))
 
-static uint64_t hash_table_hash_func(const void *key, uint64_t true_hash_size) /* OK */
+static uint64_t hash_table_hash_func(const void *key, uint64_t true_hash_size)
 {
     uint64_t i = 0;
     uint64_t hash = 0;
@@ -47,7 +47,7 @@ static uint64_t hash_table_hash_func(const void *key, uint64_t true_hash_size) /
     return hash;
 }
 
-static bool hash_table_match_func(const ListNode_t *node, const void *key) /* OK */
+static bool hash_table_match_func(const ListNode_t *node, const void *key)
 {
     if (node == NULL || key == NULL)
     {
@@ -57,7 +57,7 @@ static bool hash_table_match_func(const ListNode_t *node, const void *key) /* OK
     return memcmp(((HashNode_t *)node)->key, key, KEY_LENGTH) == 0;
 }
 
-static void hash_table_free_node(ListNode_t *node) /* OK */
+static void hash_table_free_node(ListNode_t *node)
 {
     if (node == NULL)
     {
@@ -75,7 +75,7 @@ static void hash_table_free_node(ListNode_t *node) /* OK */
     return;
 }
 
-static void *key_from_ip(ipv4_datagram_t *datagram) /* OK */
+static void *key_from_ip(ipv4_datagram_t *datagram)
 {
     uint8_t *key = NULL;
 
@@ -97,9 +97,11 @@ static void *key_from_ip(ipv4_datagram_t *datagram) /* OK */
     return (void *)key;
 }
 
-void print_packet_counter_hash_table(packet_counter_t *counter) /* OK */
+void print_packet_counter_hash_table(packet_counter_t *counter)
 {
     uint64_t i = 0;
+    uint64_t total = 0;
+    uint64_t count = 0;
     int char_printed = 0;
     HashTable_t *hash_table = NULL;
     HashNode_t *current = NULL;
@@ -122,7 +124,7 @@ void print_packet_counter_hash_table(packet_counter_t *counter) /* OK */
     printf("│       │    Source IP    │  Destination IP │         │\n");
     printf("├───────┼─────────────────┼─────────────────┼─────────┤\n");
 #else
-    printf("+-----------------------------------------------------+\n");
+    printf("+=====================================================+\n");
     printf("|                     Hash Table                      |\n");
     printf("+-------+-----------------------------------+---------+\n");
     printf("|       |                Key                |         +\n");
@@ -143,6 +145,9 @@ void print_packet_counter_hash_table(packet_counter_t *counter) /* OK */
 
         while (current != NULL)
         {
+            count = ((packet_node_t *)(current->data))->ref_counter;
+            total += count;
+
             if (current == hash_table->table[i])
             {
                 printf(PIPE " %*" PRIu64 " " PIPE " ", SPACE_FOR_INDEX, i);
@@ -156,29 +161,39 @@ void print_packet_counter_hash_table(packet_counter_t *counter) /* OK */
             printf("%*s " PIPE " ", MAX(SPACE_FOR_IP - char_printed, 0), "");
             char_printed = print_ip_addr((ip_addr_t *)(current->key + sizeof(ip_addr_t)));
             printf("%*s " PIPE " ", MAX(SPACE_FOR_IP - char_printed, 0), "");
-            printf("%*" PRIu64 " " PIPE "\n", SPACE_FOR_COUNT,
-                   ((packet_node_t *)(current->data))->ref_counter);
+            printf("%*" PRIu64 " " PIPE "\n", SPACE_FOR_COUNT, count);
             current = (HashNode_t *)current->node.next;
         }
 
 #ifdef USE_UNICODE
         if (i == hash_table->capacity - 1)
         {
-            printf("└───────┴─────────────────┴─────────────────┴─────────┘\n");
+            printf("├───────┴─────────────────┴─────────────────┼─────────┤\n");
         }
         else
         {
             printf("├───────┼─────────────────┼─────────────────┼─────────┤\n");
         }
+
 #else
         printf("+-------+-----------------+-----------------+---------+\n");
 #endif
     }
 
+#ifdef USE_UNICODE
+    printf("│                                     Total │ %*" PRIu64 " │\n", SPACE_FOR_COUNT,
+           total);
+    printf("└───────────────────────────────────────────┴─────────┘\n");
+#else
+    printf("|                                     Total | %*" PRIu64 " |\n", SPACE_FOR_COUNT,
+           total);
+    printf("+-------------------------------------------+---------+\n\n\n");
+#endif
+
     return;
 }
 
-void print_packet_counter_linked_list(packet_counter_t *counter) /* OK */
+void print_packet_counter_linked_list(packet_counter_t *counter)
 {
     int char_printed = 0;
     uint64_t i = 0;
@@ -201,8 +216,8 @@ void print_packet_counter_linked_list(packet_counter_t *counter) /* OK */
     printf("│   #   │    Source IP    │  Destination IP │  Count  │\n");
     printf("├───────┼─────────────────┼─────────────────┼─────────┤\n");
 #else
-    printf("+-----------------------------------------------------+\n");
-    printf("+                     Linked List                     +\n");
+    printf("+=====================================================+\n");
+    printf("|                     Linked List                     |\n");
     printf("+-------+-----------------+-----------------+---------+\n");
     printf("|   #   |    Source IP    |  Destination IP |  Count  |\n");
     printf("+-------+-----------------+-----------------+---------+\n");
@@ -237,7 +252,7 @@ void print_packet_counter_linked_list(packet_counter_t *counter) /* OK */
     return;
 }
 
-packet_counter_t *packet_counter_create() /* OK */
+packet_counter_t *packet_counter_create()
 {
     packet_counter_t *counter = NULL;
 
@@ -256,7 +271,7 @@ packet_counter_t *packet_counter_create() /* OK */
     return counter;
 }
 
-void packet_counter_increase(packet_counter_t *counter, ipv4_datagram_t *datagram) /* OK */
+void packet_counter_increase(packet_counter_t *counter, ipv4_datagram_t *datagram)
 {
     void *key = NULL;
     packet_node_t *result = NULL;

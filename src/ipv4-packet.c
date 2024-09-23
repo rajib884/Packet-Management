@@ -3,9 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "common.h"
 #include "ipv4-packet.h"
 
-ipv4_datagram_t *ipv4_datagram_from_ethernet_frame(ethernet_frame_t *frame) /* OK */
+ipv4_datagram_t *ipv4_datagram_from_ethernet_frame(ethernet_frame_t *frame)
 {
     ipv4_header_t *header = NULL;
     uint8_t *options = NULL;
@@ -73,12 +74,24 @@ ipv4_datagram_t *ipv4_datagram_from_ethernet_frame(ethernet_frame_t *frame) /* O
 
     if (header->total_length != frame->data_len)
     {
-        /* There may be padding bits added by ethernet protocol */
-        if (frame->data_len != ETHERNET_MINIMUM_DATA_LEN ||
-            header->total_length > ETHERNET_MINIMUM_DATA_LEN)
+        if (header->total_length == 0)
         {
-            fprintf(stderr, "IPv4 header contains invalid total length attribute.\n");
-            goto cleanup;
+            /**
+             * In some traffic, the IP Length field is zero. WireShark assumes this is because of
+             * TCP segmentation offloading. Here, I calculate data_len from ethernet packet size in
+             * that case.
+             * */
+            data_len = frame->data_len - header_len;
+        }
+        else
+        {
+            /* There may be padding bits added by ethernet protocol */
+            if (frame->data_len != ETHERNET_MINIMUM_DATA_LEN ||
+                header->total_length > ETHERNET_MINIMUM_DATA_LEN)
+            {
+                fprintf(stderr, "IPv4 header contains invalid total length attribute.\n");
+                goto cleanup;
+            }
         }
     }
 
@@ -111,7 +124,7 @@ cleanup:
     return NULL;
 }
 
-void ipv4_datagram_free(ipv4_datagram_t **datagram_p) /* OK */
+void ipv4_datagram_free(ipv4_datagram_t **datagram_p)
 {
     if (datagram_p == NULL || *datagram_p == NULL)
     {
@@ -130,7 +143,7 @@ void ipv4_datagram_free(ipv4_datagram_t **datagram_p) /* OK */
     return;
 }
 
-int print_ip_addr(ip_addr_t *ip) /* OK */
+int print_ip_addr(ip_addr_t *ip)
 {
     uint32_t i = 0;
     int count = 0;
@@ -155,8 +168,6 @@ int print_ip_addr(ip_addr_t *ip) /* OK */
 
 void print_ipv4(ipv4_datagram_t *datagram, bool print_data)
 {
-    uint32_t i = 0;
-
     printf("  IPv4 Datagram:\n");
 
     if (datagram == NULL || datagram->header == NULL)
@@ -185,41 +196,20 @@ void print_ipv4(ipv4_datagram_t *datagram, bool print_data)
     print_ip_addr(&datagram->header->destination_address);
     printf("\n");
     printf("    Options: ");
+
     if (datagram->option_len == 0)
     {
         printf("None\n");
     }
     else
     {
-        i = 0;
-
-        while (i < datagram->option_len)
-        {
-            if (i % 32 == 0)
-            {
-                printf("\n    ");
-            }
-
-            printf("%02x ", datagram->options[i++]);
-        }
-        printf("\n");
+        print_data_f(datagram->options, datagram->option_len);
     }
 
     if (print_data)
     {
-        i = 0;
         printf("    Data:");
-
-        while (i < datagram->data_len)
-        {
-            if (i % 32 == 0)
-            {
-                printf("\n    ");
-            }
-
-            printf("%02x ", datagram->data[i++]);
-        }
-        printf("\n");
+        print_data_f(datagram->data, datagram->data_len);
     }
 
     return;

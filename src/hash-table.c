@@ -5,6 +5,8 @@
 
 static HashNode_t *hash_table_create_node(const void *key, const void *data);
 static bool hash_table_rehash(HashTable_t *hash_table, uint64_t new_capacity);
+static bool is_prime(uint64_t n);
+static uint64_t next_prime(uint64_t n);
 
 /*****************************************************************************
  *
@@ -23,7 +25,7 @@ static bool hash_table_rehash(HashTable_t *hash_table, uint64_t new_capacity);
  *                           are invalid or if memory allocation fails.
  ******************************************************************************/
 HashTable_t *hash_table_create(uint64_t capacity, hash_func_t hash_func, match_func_t match_func,
-                               free_data_t free_node) /* OK */
+                               free_data_t free_node)
 {
     HashTable_t *hash_table = NULL;
     HashNode_t **table = NULL;
@@ -76,7 +78,7 @@ HashTable_t *hash_table_create(uint64_t capacity, hash_func_t hash_func, match_f
  *
  *   Description:            Creates a new hash node with the given key and data.
  ******************************************************************************/
-static HashNode_t *hash_table_create_node(const void *key, const void *data) /* OK */
+static HashNode_t *hash_table_create_node(const void *key, const void *data)
 {
     HashNode_t *node = NULL;
 
@@ -115,7 +117,7 @@ static HashNode_t *hash_table_create_node(const void *key, const void *data) /* 
  *                           is NULL, the key is NULL, or if the key does not exist
  *                           in the table.
  ******************************************************************************/
-const void *hash_table_get_item(HashTable_t *hash_table, const void *key) /* OK */
+const void *hash_table_get_item(HashTable_t *hash_table, const void *key)
 {
     uint64_t hash_index = 0;
     ListNode_t *result = NULL;
@@ -139,6 +141,60 @@ const void *hash_table_get_item(HashTable_t *hash_table, const void *key) /* OK 
     return NULL;
 }
 
+static bool is_prime(uint64_t n)
+{
+    uint64_t i = 0;
+
+    if (n <= 1)
+    {
+        return false;
+    }
+
+    if (n <= 3)
+    {
+        return true;
+    }
+
+    if (n % 2 == 0 || n % 3 == 0)
+    {
+        return false;
+    }
+
+    /**
+     * While finding factors of a number it is enough to iterate from 1 to sqrt(N) to find all the
+     * factors of N.
+     * */
+    for (i = 5; i * i <= n; i += 6)
+    {
+        if (n % i == 0 || n % (i + 2) == 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
+}
+
+static uint64_t next_prime(uint64_t n)
+{
+    if (n <= 2)
+    {
+        return 2;
+    }
+
+    if (n % 2 == 0)
+    {
+        n++;
+    }
+
+    while (!is_prime(n))
+    {
+        n += 2;
+    }
+
+    return n;
+}
+
 /*****************************************************************************
  *
  *   Name:       hash_table_add_item
@@ -154,7 +210,7 @@ const void *hash_table_get_item(HashTable_t *hash_table, const void *key) /* OK 
  *                           if the key already exists. Rehashes the table if the
  *                           number of items exceeds the current capacity.
  ******************************************************************************/
-bool hash_table_add_item(HashTable_t *hash_table, const void *key, const void *data) /* OK */
+bool hash_table_add_item(HashTable_t *hash_table, const void *key, const void *data)
 {
     uint64_t hash_index = 0;
     uint64_t new_capacity = 0;
@@ -167,15 +223,14 @@ bool hash_table_add_item(HashTable_t *hash_table, const void *key, const void *d
         return false;
     }
 
-    if (hash_table->size > hash_table->capacity)
+    if (hash_table->size > hash_table->capacity / 2)
     {
-        if (hash_table->capacity > UINT64_MAX / 2)
+        new_capacity = next_prime(hash_table->capacity * 2);
+
+        if (hash_table->capacity > new_capacity)
         {
+            /* Overflowed? */
             new_capacity = UINT64_MAX;
-        }
-        else
-        {
-            new_capacity = hash_table->capacity * 2;
         }
 
         hash_table_rehash(hash_table, new_capacity);
@@ -206,7 +261,7 @@ bool hash_table_add_item(HashTable_t *hash_table, const void *key, const void *d
     return true;
 }
 
-static bool hash_table_rehash(HashTable_t *hash_table, uint64_t new_capacity) /* OK */
+static bool hash_table_rehash(HashTable_t *hash_table, uint64_t new_capacity)
 {
     uint64_t i = 0;
     uint64_t hash_index = 0;
@@ -235,13 +290,14 @@ static bool hash_table_rehash(HashTable_t *hash_table, uint64_t new_capacity) /*
             linked_list_delete_node(head_p, *head_p, NULL); /* Move head to next node */
 
             hash_index = hash_table->hash_func(node->key, new_capacity); /* Get new index */
-            hash_index = hash_index % hash_table->capacity;              /* Just to be safe */
+            hash_index = hash_index % new_capacity;                      /* Just to be safe */
             head_p = (ListNode_t **)&new_table[hash_index];              /* Address of new list */
             linked_list_insert_at_head(head_p, (ListNode_t *)node);      /* Add node to new list */
         }
     }
 
     free(hash_table->table);
+    hash_table->table = NULL;
     hash_table->table = new_table;
     hash_table->capacity = new_capacity;
 
@@ -261,7 +317,7 @@ static bool hash_table_rehash(HashTable_t *hash_table, uint64_t new_capacity) /*
  *   Description:            Removes the item associated with the specified key
  *                           from the hash table.
  ******************************************************************************/
-bool hash_table_remove_item(HashTable_t *hash_table, const void *key) /* OK */
+bool hash_table_remove_item(HashTable_t *hash_table, const void *key)
 {
     uint64_t hash_index = 0;
     ListNode_t *node = NULL;
@@ -300,7 +356,7 @@ bool hash_table_remove_item(HashTable_t *hash_table, const void *key) /* OK */
  *                           including its nodes and the table itself. After freeing,
  *                           the hash table pointer is set to NULL.
  ******************************************************************************/
-void hash_table_free(HashTable_t **hash_table_p) /* OK */
+void hash_table_free(HashTable_t **hash_table_p)
 {
     uint64_t i = 0;
     ListNode_t **head_p = NULL;

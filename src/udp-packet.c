@@ -3,9 +3,10 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "common.h"
 #include "udp-packet.h"
 
-udp_packet_t *udp_packet_from_ipv4_datagram(ipv4_datagram_t *datagram) /* OK */
+udp_packet_t *udp_packet_from_ipv4_datagram(ipv4_datagram_t *datagram)
 {
     udp_packet_t *packet = NULL;
     udp_header_t *header = NULL;
@@ -86,7 +87,7 @@ cleanup:
     return NULL;
 }
 
-void udp_packet_free(udp_packet_t **packet_p) /* OK */
+void udp_packet_free(udp_packet_t **packet_p)
 {
     if (packet_p == NULL || *packet_p == NULL)
     {
@@ -102,10 +103,8 @@ void udp_packet_free(udp_packet_t **packet_p) /* OK */
     return;
 }
 
-void print_udp(udp_packet_t *packet, bool print_data) /* OK */
+void print_udp(udp_packet_t *packet, bool print_data)
 {
-    uint32_t i = 0;
-
     printf("  UDP Packet:\n");
 
     if (packet == NULL)
@@ -122,20 +121,8 @@ void print_udp(udp_packet_t *packet, bool print_data) /* OK */
 
     if (print_data)
     {
-        i = 0;
         printf("    UDP Data: ");
-
-        while (i < packet->data_len)
-        {
-            if (i % 32 == 0)
-            {
-                printf("\n    ");
-            }
-
-            printf("%02x ", packet->data[i++]);
-        }
-
-        printf("\n");
+        print_data_f(packet->data, packet->data_len);
     }
 
     return;

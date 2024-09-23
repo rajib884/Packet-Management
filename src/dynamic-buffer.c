@@ -14,7 +14,7 @@
  *   Description:            Allocates and initializes a dynamic buffer with the
  *                           specified initial capacity.
  ******************************************************************************/
-dynamic_buffer_t *dynamic_buffer_create(size_t initial_capacity) /* OK */
+dynamic_buffer_t *dynamic_buffer_create(size_t initial_capacity)
 {
     dynamic_buffer_t *buf = NULL;
 
@@ -56,7 +56,7 @@ dynamic_buffer_t *dynamic_buffer_create(size_t initial_capacity) /* OK */
  *               Failed           false if the operation failed
  *   Description:            Resizes the dynamic buffer to the specified new capacity.
  ******************************************************************************/
-bool dynamic_buffer_resize(dynamic_buffer_t *buf, size_t new_capacity) /* OK */
+bool dynamic_buffer_resize(dynamic_buffer_t *buf, size_t new_capacity)
 {
     uint8_t *new_data = NULL;
 
@@ -90,7 +90,7 @@ bool dynamic_buffer_resize(dynamic_buffer_t *buf, size_t new_capacity) /* OK */
  *   Description:            Adds the specified data to the dynamic buffer. Automatically
  *                           resizes the buffer if the current capacity is insufficient.
  ******************************************************************************/
-bool dynamic_buffer_add_data(dynamic_buffer_t *buf, const uint8_t *data, size_t data_size) /* OK */
+bool dynamic_buffer_add_data(dynamic_buffer_t *buf, const uint8_t *data, size_t data_size)
 {
     size_t needed_capacity = 0;
     size_t capacity = 0;
@@ -141,7 +141,7 @@ bool dynamic_buffer_add_data(dynamic_buffer_t *buf, const uint8_t *data, size_t 
  *   Description:            Frees all memory associated with the specified dynamic buffer.
  *                           The buffer pointer is set to NULL after freeing.
  ******************************************************************************/
-void dynamic_buffer_free(dynamic_buffer_t **buf_p) /* OK */
+void dynamic_buffer_free(dynamic_buffer_t **buf_p)
 {
     if (buf_p == NULL || *buf_p == NULL)
     {

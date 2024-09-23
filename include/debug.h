@@ -8,9 +8,9 @@
 #endif
 
 #ifdef DEBUG
-    #define debug_call(func, ...) func(__VA_ARGS__)
+    #define if_debug_call(func, ...) func(__VA_ARGS__)
 #else
-    #define debug_call(func, ...)
+    #define if_debug_call(func, ...)
 #endif
 
 #endif /* __DEBUG_H__ */
